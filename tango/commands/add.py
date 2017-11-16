@@ -6,6 +6,7 @@ from asciimatics.exceptions import ResizeScreenError, NextScene, StopApplication
 import sys
 import sqlite3
 
+from utils import debug_print
 
 class TangoModel(object):
     def __init__(self):
@@ -34,8 +35,6 @@ class TangoModel(object):
     def add(self, contact):
         contact['created'] = 'asdf'
         contact['image'] = 'asdf'
-        with open('./debug.log', 'w') as f:
-            print(contact, file=f)
         self._db.cursor().execute('''
             INSERT INTO contacts(created, headword, morphology, definition, example, image_url, image, notes)
             VALUES(:created, :headword, :morphology, :definition, :example, :image_url, :image, :notes)''',
@@ -131,13 +130,13 @@ class ListView(Frame):
         raise StopApplication("User pressed quit")
 
 
-class ContactView(Frame):
+class TangoView(Frame):
     def __init__(self, screen, model):
-        super(ContactView, self).__init__(screen,
+        super(TangoView, self).__init__(screen,
                                           screen.height * 2 // 3,
                                           screen.width * 2 // 3,
                                           hover_focus=True,
-                                          title="Tango Details",
+                                          title="Tango",
                                           reduce_cpu=True)
         # Save off the model that accesses the contacts database.
         self._model = model
@@ -145,13 +144,9 @@ class ContactView(Frame):
         # Create the form for displaying the list of contacts.
         layout = Layout([100], fill_frame=True)
         self.add_layout(layout)
-        layout.add_widget(Text("Name:", "headword"))
-        layout.add_widget(Text("Address:", "morphology"))
-        layout.add_widget(Text("Phone number:", "definition"))
-        layout.add_widget(Text("Email address:", "example"))
-        layout.add_widget(Text("Email address:", "image_url"))
-        layout.add_widget(TextBox(
-            Widget.FILL_FRAME, "Notes:", "notes", as_string=True))
+        layout.add_widget(Text("Headword", "headword"))
+        for keyword in ['morphology', 'definition', 'example', 'image_url', 'notes']:
+            layout.add_widget(TextBox(3, keyword.title(), keyword, as_string=True))
         layout2 = Layout([1, 1, 1, 1])
         self.add_layout(layout2)
         layout2.add_widget(Button("OK", self._ok), 0)
@@ -160,7 +155,7 @@ class ContactView(Frame):
 
     def reset(self):
         # Do standard reset to clear out form, then populate with new data.
-        super(ContactView, self).reset()
+        super(TangoView, self).reset()
         self.data = self._model.get_current_contact()
 
     def _ok(self):
@@ -176,7 +171,7 @@ class ContactView(Frame):
 def demo(screen, scene, contacts):
     scenes = [
         Scene([ListView(screen, contacts)], -1, name="Main"),
-        Scene([ContactView(screen, contacts)], -1, name="Edit Tango")
+        Scene([TangoView(screen, contacts)], -1, name="Edit Tango")
     ]
 
     screen.play(scenes, stop_on_resize=True, start_scene=scene)
