@@ -6,7 +6,7 @@ from asciimatics.exceptions import ResizeScreenError, NextScene, StopApplication
 import sys
 import sqlite3
 
-from utils import debug_print
+from utils import debug_print, get_url_as_base64text
 
 class TangoModel(object):
     def __init__(self):
@@ -32,14 +32,20 @@ class TangoModel(object):
         # Current contact when editing.
         self.current_id = None
 
-    def add(self, contact):
-        contact['created'] = 'asdf'
-        contact['image'] = 'asdf'
+    def add(self, tango):
+        tango['created'] = 'asdf'
+        tango['image_url'] = tango['image_url'].strip()
+        if tango['image_url']:
+            try:
+                tango['image'] = get_url_as_base64text(tango['image_url'])
+            except Exception as e:
+                debug_print("Error: Could not download image: " + str(e))
         self._db.cursor().execute('''
             INSERT INTO contacts(created, headword, morphology, definition, example, image_url, image, notes)
             VALUES(:created, :headword, :morphology, :definition, :example, :image_url, :image, :notes)''',
-                                  contact)
+                                  tango)
         self._db.commit()
+        debug_print(tango)
 
     def get_summary(self):
         return self._db.cursor().execute(
@@ -51,7 +57,7 @@ class TangoModel(object):
 
     def get_current_contact(self):
         if self.current_id is None:
-            return {"headword": "", "morphology": "", "definition": "", "example": "", "notes": "", "image_url": ""}
+            return {"headword": "", "morphology": "", "definition": "", "example": "", "notes": "", "image_url": "", "image": ""}
         else:
             return self.get_contact(self.current_id)
 
