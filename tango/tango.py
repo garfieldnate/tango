@@ -10,7 +10,7 @@ def tango():
 @click.argument('language')
 @click.argument('headword')
 def add(language, headword):
-    tui_add.main()
+    tui_add.main(language)
 
 if __name__ == "__main__":
     tango()

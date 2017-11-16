@@ -1,6 +1,8 @@
 import base64
 from pathlib import Path
 import requests
+from string import Template
+from urllib.parse import quote as url_quote
 
 f = open(Path.home() / "dic_lookups/debug.log", 'w+')
 
@@ -16,3 +18,17 @@ def get_url_as_base64text(url):
     if url.startswith(data_url_prefix):
         return url[len(data_url_prefix) + 1:]
     return base64.b64encode(requests.get(url, headers = REQUEST_HEADERS).content).decode('ascii')
+
+# TODO: make language-agnostic
+IMAGE_SEARCH_URL = Template("https://www.bing.de/images/search?&cc=$lang%2c$lang&setmkt=$lang-$lang&setlang=$lang-$lang&q=$word")
+def get_image_search_url(language, word):
+    return IMAGE_SEARCH_URL.substitute(lang=language, word=url_quote(word))
+
+WIKTIONARY_URL = Template("https://$lang.wiktionary.org/wiki/$word")
+def get_wiktionary_url(lang, word):
+    return WIKTIONARY_URL.substitute(lang, url_quote(word))
+
+TATOEBA_LANGS = {'de': 'deu','fr':'fra','vi':'vie','en':'eng', 'zh':'cmn','jp':'jpn'}
+EXAMPLE_SEARCH_URL = Template("https://tatoeba.org/eng/sentences/search?from=$lang&to=und&query=$word")
+def get_tatoeba_url(lang, word):
+    return EXAMPLE_SEARCH_URL.substitute(lang=lang, word = url_quote(word))

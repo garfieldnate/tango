@@ -1,12 +1,15 @@
-from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
-    Button, TextBox, Widget
-from asciimatics.scene import Scene
-from asciimatics.screen import Screen
-from asciimatics.exceptions import ResizeScreenError, NextScene, StopApplication
 import sys
 import sqlite3
+import webbrowser
 
-from utils import debug_print, get_url_as_base64text
+from asciimatics.event import KeyboardEvent
+from asciimatics.exceptions import ResizeScreenError, NextScene, StopApplication
+from asciimatics.scene import Scene
+from asciimatics.screen import Screen
+from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
+    Button, TextBox, Widget
+
+from utils import debug_print, get_url_as_base64text, get_image_search_url, get_wiktionary_url
 
 class TangoModel(object):
     def __init__(self):
@@ -146,13 +149,25 @@ class TangoView(Frame):
                                           reduce_cpu=True)
         # Save off the model that accesses the contacts database.
         self._model = model
+        self._model.current_focus = ''
+
+        def note_focus(name):
+            def on_focus():
+                self._model.current_focus = name
+            return on_focus
 
         # Create the form for displaying the list of contacts.
         layout = Layout([100], fill_frame=True)
         self.add_layout(layout)
-        layout.add_widget(Text("Headword", "headword"))
+
+        headword_widget = Text("Headword", "headword")
+        headword_widget._on_focus=note_focus("headword")
+        layout.add_widget(headword_widget)
+        debug_print("hello?")
         for keyword in ['morphology', 'definition', 'example', 'image_url', 'notes']:
-            layout.add_widget(TextBox(3, keyword.title(), keyword, as_string=True))
+            widget = TextBox(3, keyword.title(), keyword, as_string=True)
+            widget._on_focus=note_focus(keyword)
+            layout.add_widget(widget)
         layout2 = Layout([1, 1, 1, 1])
         self.add_layout(layout2)
         layout2.add_widget(Button("OK", self._ok), 0)
@@ -173,6 +188,48 @@ class TangoView(Frame):
     def _cancel():
         raise NextScene("Main")
 
+    @staticmethod
+    def _back():
+        # TODO
+        pass
+
+    @staticmethod
+    def _next():
+        # TODO
+        pass
+
+    @staticmethod
+    def _exit():
+        raise StopApplication("User terminated app")
+
+    def process_event(self, event):
+        if isinstance(event, KeyboardEvent):
+            c = event.key_code
+            # ctr-b for back
+            if c == 2:
+                self._back()
+            # ctrl-n for next
+            if c == 14:
+                self._next()
+            # Stop on ctrl+q, ctrl-x: TODO: something else is stealing the ctrl-q event
+            elif c in (17, 24):
+                self._exit()
+            # ctrl-f opens a browser in some kind of search
+            elif c == 6 and self.data['headword'].strip():
+                debug_print(self._model.current_focus)
+                if self._model.current_focus == 'example':
+                    webbrowser.open(get_wiktionary_url(self._model.language, self.data["headword"]), new=2)
+                elif self._model.current_focus == 'image_url':
+                    webbrowser.open(get_image_search_url(self._model.language, self.data["headword"]), new=2)
+            else:
+                debug_print(c)
+                debug_print(self._model.current_focus)
+                debug_print("data:" + str(self.data))
+
+
+        # Now pass on to lower levels for normal handling of the event.
+        return super(TangoView, self).process_event(event)
+
 
 def demo(screen, scene, contacts):
     scenes = [
@@ -182,8 +239,9 @@ def demo(screen, scene, contacts):
 
     screen.play(scenes, stop_on_resize=True, start_scene=scene)
 
-def main():
+def main(language):
     contacts = TangoModel()
+    contacts.language = language
     last_scene = None
     while True:
         try:
@@ -193,4 +251,4 @@ def main():
             last_scene = e.scene
 
 if __name__ == '__main__':
-    main()
+    main('de')
