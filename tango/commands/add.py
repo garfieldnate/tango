@@ -78,66 +78,6 @@ class TangoModel(object):
             DELETE FROM contacts WHERE id=:id''', {"id": contact_id})
         self._db.commit()
 
-
-class ListView(Frame):
-    def __init__(self, screen, model):
-        super(ListView, self).__init__(screen,
-                                       screen.height * 2 // 3,
-                                       screen.width * 2 // 3,
-                                       on_load=self._reload_list,
-                                       hover_focus=True,
-                                       title="Tango")
-        # Save off the model that accesses the contacts database.
-        self._model = model
-
-        # Create the form for displaying the list of contacts.
-        self._list_view = ListBox(
-            Widget.FILL_FRAME,
-            model.get_summary(),
-            name="tango",
-            on_change=self._on_pick)
-        self._edit_button = Button("Edit", self._edit)
-        self._delete_button = Button("Delete", self._delete)
-        layout = Layout([100], fill_frame=True)
-        self.add_layout(layout)
-        layout.add_widget(self._list_view)
-        layout.add_widget(Divider())
-        layout2 = Layout([1, 1, 1, 1])
-        self.add_layout(layout2)
-        layout2.add_widget(Button("Add", self._add), 0)
-        layout2.add_widget(self._edit_button, 1)
-        layout2.add_widget(self._delete_button, 2)
-        layout2.add_widget(Button("Quit", self._quit), 3)
-        self.fix()
-        self._on_pick()
-
-    def _on_pick(self):
-        self._edit_button.disabled = self._list_view.value is None
-        self._delete_button.disabled = self._list_view.value is None
-
-    def _reload_list(self, new_value=None):
-        self._list_view.options = self._model.get_summary()
-        self._list_view.value = new_value
-
-    def _add(self):
-        self._model.current_id = None
-        raise NextScene("Edit Tango")
-
-    def _edit(self):
-        self.save()
-        self._model.current_id = self.data["contacts"]
-        raise NextScene("Edit Tango")
-
-    def _delete(self):
-        self.save()
-        self._model.delete_contact(self.data["tango"])
-        self._reload_list()
-
-    @staticmethod
-    def _quit():
-        raise StopApplication("User pressed quit")
-
-
 class TangoView(Frame):
     def __init__(self, screen, model):
         super(TangoView, self).__init__(screen,
@@ -152,6 +92,8 @@ class TangoView(Frame):
 
         def note_focus(name):
             def on_focus():
+                # we do this so that headword can be accessed in process_event();
+                # TODO: would be better if we could just query the headword widget's current value
                 self.save()
                 self._model.current_focus = name
             return on_focus
@@ -170,7 +112,7 @@ class TangoView(Frame):
         layout2 = Layout([1, 1, 1, 1])
         self.add_layout(layout2)
         layout2.add_widget(Button("OK", self._ok), 0)
-        layout2.add_widget(Button("Cancel", self._cancel), 3)
+        layout2.add_widget(Button("Cancel", self._quit), 3)
         self.fix()
 
     def reset(self):
@@ -184,8 +126,8 @@ class TangoView(Frame):
         raise NextScene("Main")
 
     @staticmethod
-    def _cancel():
-        raise NextScene("Main")
+    def _quit():
+        raise StopApplication("User exited application")
 
     @staticmethod
     def _back():
@@ -219,6 +161,7 @@ class TangoView(Frame):
                     webbrowser.open(get_wiktionary_url(self._model.language, self.data["headword"]), new=2)
                 elif self._model.current_focus == 'image_url':
                     webbrowser.open(get_image_search_url(self._model.language, self.data["headword"]), new=2)
+            # TODO: pressing down arrow should go to next widget if cursor is at end of line
 
         # Now pass on to lower levels for normal handling of the event.
         return super(TangoView, self).process_event(event)
@@ -226,8 +169,7 @@ class TangoView(Frame):
 
 def demo(screen, scene, contacts):
     scenes = [
-        Scene([ListView(screen, contacts)], -1, name="Main"),
-        Scene([TangoView(screen, contacts)], -1, name="Edit Tango")
+        Scene([TangoView(screen, contacts)], -1, name="Add Tango")
     ]
 
     screen.play(scenes, stop_on_resize=True, start_scene=scene)
