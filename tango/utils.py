@@ -21,12 +21,12 @@ def get_url_as_base64text(url):
 
 # TODO: make language-agnostic
 IMAGE_SEARCH_URL = Template("https://www.bing.de/images/search?&cc=$lang%2c$lang&setmkt=$lang-$lang&setlang=$lang-$lang&q=$word")
-def get_image_search_url(language, word):
-    return IMAGE_SEARCH_URL.substitute(lang=language, word=url_quote(word))
+def get_image_search_url(lang, word):
+    return IMAGE_SEARCH_URL.substitute(lang=lang, word=url_quote(word))
 
 WIKTIONARY_URL = Template("https://$lang.wiktionary.org/wiki/$word")
 def get_wiktionary_url(lang, word):
-    return WIKTIONARY_URL.substitute(lang, url_quote(word))
+    return WIKTIONARY_URL.substitute(lang=lang, word=url_quote(word))
 
 TATOEBA_LANGS = {'de': 'deu','fr':'fra','vi':'vie','en':'eng', 'zh':'cmn','jp':'jpn'}
 EXAMPLE_SEARCH_URL = Template("https://tatoeba.org/eng/sentences/search?from=$lang&to=und&query=$word")

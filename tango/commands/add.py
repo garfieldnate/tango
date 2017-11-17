@@ -48,7 +48,6 @@ class TangoModel(object):
             VALUES(:created, :headword, :morphology, :definition, :example, :image_url, :image, :notes)''',
                                   tango)
         self._db.commit()
-        debug_print(tango)
 
     def get_summary(self):
         return self._db.cursor().execute(
@@ -153,6 +152,7 @@ class TangoView(Frame):
 
         def note_focus(name):
             def on_focus():
+                self.save()
                 self._model.current_focus = name
             return on_focus
 
@@ -163,7 +163,6 @@ class TangoView(Frame):
         headword_widget = Text("Headword", "headword")
         headword_widget._on_focus=note_focus("headword")
         layout.add_widget(headword_widget)
-        debug_print("hello?")
         for keyword in ['morphology', 'definition', 'example', 'image_url', 'notes']:
             widget = TextBox(3, keyword.title(), keyword, as_string=True)
             widget._on_focus=note_focus(keyword)
@@ -216,16 +215,10 @@ class TangoView(Frame):
                 self._exit()
             # ctrl-f opens a browser in some kind of search
             elif c == 6 and self.data['headword'].strip():
-                debug_print(self._model.current_focus)
                 if self._model.current_focus == 'example':
                     webbrowser.open(get_wiktionary_url(self._model.language, self.data["headword"]), new=2)
                 elif self._model.current_focus == 'image_url':
                     webbrowser.open(get_image_search_url(self._model.language, self.data["headword"]), new=2)
-            else:
-                debug_print(c)
-                debug_print(self._model.current_focus)
-                debug_print("data:" + str(self.data))
-
 
         # Now pass on to lower levels for normal handling of the event.
         return super(TangoView, self).process_event(event)
