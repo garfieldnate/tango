@@ -1,13 +1,16 @@
 import base64
+import datetime
+import json
 from pathlib import Path
 import requests
 from string import Template
 from urllib.parse import quote as url_quote
 
-f = open(Path.home() / "dic_lookups/debug.log", 'w+')
+dic_path = Path.home() / 'dic_lookups'
 
+debug_file = open(Path.home() / "dic_lookups/debug.log", 'w+')
 def debug_print(message):
-    print(message, file=f, flush=True)
+    print(message, file=debug_file, flush=True)
 
 # Pretend to be a browser or some servers won't allow image access (lookin' at you, Etsy!)
 REQUEST_HEADERS = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
@@ -32,3 +35,13 @@ TATOEBA_LANGS = {'de': 'deu','fr':'fra','vi':'vie','en':'eng', 'zh':'cmn','jp':'
 EXAMPLE_SEARCH_URL = Template("https://tatoeba.org/eng/sentences/search?from=$lang&to=und&query=$word")
 def get_tatoeba_url(lang, word):
     return EXAMPLE_SEARCH_URL.substitute(lang=lang, word = url_quote(word))
+
+def get_formatted_datetime():
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%a %b %d %H:%M:%S %Z %Y")
+
+# Data-related functions
+
+def save_tango(lang, tango):
+    output_file = dic_path / (lang + '.txt')
+    with open(output_file, 'a') as f:
+        print(json.dumps(tango), file=f)

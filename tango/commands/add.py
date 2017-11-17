@@ -9,7 +9,8 @@ from asciimatics.screen import Screen
 from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget
 
-from utils import debug_print, get_url_as_base64text, get_image_search_url, get_wiktionary_url
+import utils
+from utils import debug_print
 
 class TangoModel(object):
     def __init__(self):
@@ -36,11 +37,11 @@ class TangoModel(object):
         self.current_id = None
 
     def add(self, tango):
-        tango['created'] = 'asdf'
+        tango['created'] = utils.get_formatted_datetime()
         tango['image_url'] = tango['image_url'].strip()
         if tango['image_url']:
             try:
-                tango['image'] = get_url_as_base64text(tango['image_url'])
+                tango['image'] = utils.get_url_as_base64text(tango['image_url'])
             except Exception as e:
                 debug_print("Error: Could not download image: " + str(e))
         self._db.cursor().execute('''
@@ -48,6 +49,7 @@ class TangoModel(object):
             VALUES(:created, :headword, :morphology, :definition, :example, :image_url, :image, :notes)''',
                                   tango)
         self._db.commit()
+        utils.save_tango(self.language, tango)
 
     def get_summary(self):
         return self._db.cursor().execute(
@@ -123,7 +125,7 @@ class TangoView(Frame):
     def _ok(self):
         self.save()
         self._model.update_current_contact(self.data)
-        raise NextScene("Main")
+        raise StopApplication("User exited application")
 
     @staticmethod
     def _quit():
@@ -158,29 +160,29 @@ class TangoView(Frame):
             # ctrl-f opens a browser in some kind of search
             elif c == 6 and self.data['headword'].strip():
                 if self._model.current_focus == 'example':
-                    webbrowser.open(get_wiktionary_url(self._model.language, self.data["headword"]), new=2)
+                    webbrowser.open(utils.get_wiktionary_url(self._model.language, self.data["headword"]), new=2)
                 elif self._model.current_focus == 'image_url':
-                    webbrowser.open(get_image_search_url(self._model.language, self.data["headword"]), new=2)
+                    webbrowser.open(utils.get_image_search_url(self._model.language, self.data["headword"]), new=2)
             # TODO: pressing down arrow should go to next widget if cursor is at end of line
 
         # Now pass on to lower levels for normal handling of the event.
         return super(TangoView, self).process_event(event)
 
 
-def demo(screen, scene, contacts):
+def demo(screen, scene, tango_model):
     scenes = [
-        Scene([TangoView(screen, contacts)], -1, name="Add Tango")
+        Scene([TangoView(screen, tango_model)], -1, name="Add Tango")
     ]
 
     screen.play(scenes, stop_on_resize=True, start_scene=scene)
 
 def main(language):
-    contacts = TangoModel()
-    contacts.language = language
+    tango_model = TangoModel()
+    tango_model.language = language
     last_scene = None
     while True:
         try:
-            Screen.wrapper(demo, catch_interrupt=True, arguments=[last_scene, contacts])
+            Screen.wrapper(demo, catch_interrupt=True, arguments=[last_scene, tango_model])
             sys.exit(0)
         except ResizeScreenError as e:
             last_scene = e.scene
