@@ -34,7 +34,12 @@ def get_wiktionary_url(lang, word):
 TATOEBA_LANGS = {'de': 'deu','fr':'fra','vi':'vie','en':'eng', 'zh':'cmn','jp':'jpn'}
 EXAMPLE_SEARCH_URL = Template("https://tatoeba.org/eng/sentences/search?from=$lang&to=und&query=$word")
 def get_tatoeba_url(lang, word):
-    return EXAMPLE_SEARCH_URL.substitute(lang=lang, word = url_quote(word))
+    return EXAMPLE_SEARCH_URL.substitute(lang=TATOEBA_LANGS[lang], word=url_quote(word))
+
+LEO_LANGS = {'de': "deutsch"}
+LEO_URL = Template("https://dict.leo.org/englisch-$lang/$word")
+def get_dictionary_url(lang, word):
+    return LEO_URL.substitute(lang=LEO_LANGS[lang], word=url_quote(word))
 
 def get_formatted_datetime():
     return datetime.datetime.now(datetime.timezone.utc).strftime("%a %b %d %H:%M:%S %Z %Y")

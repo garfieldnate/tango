@@ -159,6 +159,8 @@ class TangoView(Frame):
                 self._quit()
             # ctrl-f opens a browser in some kind of search
             elif c == 6 and self.data['headword'].strip():
+                if self._model.current_focus == 'definition':
+                    webbrowser.open(utils.get_dictionary_url(self._model.language, self.data['headword']))
                 if self._model.current_focus == 'example':
                     webbrowser.open(utils.get_wiktionary_url(self._model.language, self.data["headword"]), new=2)
                 elif self._model.current_focus == 'image_url':
