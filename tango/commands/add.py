@@ -61,7 +61,8 @@ class TangoModel(object):
 
     def get_current_contact(self):
         if self.current_id is None:
-            return {"headword": self.default_headword, "morphology": "", "definition": "", "example": "", "notes": "", "image_url": "", "image": ""}
+            headword = self.default_headword if self.default_headword else ""
+            return {"headword": headword, "morphology": "", "definition": "", "example": "", "notes": "", "image_url": "", "image": ""}
         else:
             return self.get_contact(self.current_id)
 
@@ -107,7 +108,6 @@ class TangoView(Frame):
         headword_widget = Text("Headword", "headword")
         headword_widget._on_focus=note_focus("headword")
         self.headword_widget = headword_widget
-        # headword_widget.value = "stuff"
         layout.add_widget(headword_widget)
         for keyword in ['morphology', 'definition', 'example', 'image_url', 'notes']:
             widget = TextBox(3, keyword.title(), keyword, as_string=True)
@@ -115,7 +115,8 @@ class TangoView(Frame):
             layout.add_widget(widget)
         layout2 = Layout([1, 1, 1, 1])
         self.add_layout(layout2)
-        layout2.add_widget(Button("OK", self._ok), 0)
+        layout2.add_widget(Button("Done", self._save_and_quit), 0)
+        layout2.add_widget(Button("Next", self._save_and_next), 0)
         layout2.add_widget(Button("Cancel", self._quit), 3)
         self.fix()
 
@@ -124,10 +125,16 @@ class TangoView(Frame):
         super(TangoView, self).reset()
         self.data = self._model.get_current_contact()
 
-    def _ok(self):
+    def _save_and_quit(self):
         self.save()
         self._model.update_current_contact(self.data)
         raise StopApplication("User exited application")
+
+    def _save_and_next(self):
+        self.save()
+        self._model.update_current_contact(self.data)
+        self._model.default_headword = None
+        self.reset()
 
     @staticmethod
     def _quit():
@@ -138,28 +145,18 @@ class TangoView(Frame):
         # TODO
         pass
 
-    @staticmethod
-    def _next():
-        # TODO
-        pass
-
-    @staticmethod
-    def _exit():
-        raise StopApplication("User terminated app")
-
     def process_event(self, event):
         if isinstance(event, KeyboardEvent):
             c = event.key_code
-            # ctr-b for back
-            if c == 2:
-                self.headword_widget.value = ""
-                # self._back()
             # ctrl-n for next
             if c == 14:
-                self._next()
+                self._save_and_next()
+            # ctrl-d for done
+            if c == 4:
+                self._save_and_quit()
             # Stop on ctrl+q, ctrl-x: TODO: something else is stealing the ctrl-q event
             elif c in (17, 24):
-                self._exit()
+                self._quit()
             # ctrl-f opens a browser in some kind of search
             elif c == 6 and self.data['headword'].strip():
                 if self._model.current_focus == 'example':
