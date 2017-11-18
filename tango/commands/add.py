@@ -61,7 +61,7 @@ class TangoModel(object):
 
     def get_current_contact(self):
         if self.current_id is None:
-            return {"headword": "", "morphology": "", "definition": "", "example": "", "notes": "", "image_url": "", "image": ""}
+            return {"headword": self.default_headword, "morphology": "", "definition": "", "example": "", "notes": "", "image_url": "", "image": ""}
         else:
             return self.get_contact(self.current_id)
 
@@ -106,6 +106,8 @@ class TangoView(Frame):
 
         headword_widget = Text("Headword", "headword")
         headword_widget._on_focus=note_focus("headword")
+        self.headword_widget = headword_widget
+        # headword_widget.value = "stuff"
         layout.add_widget(headword_widget)
         for keyword in ['morphology', 'definition', 'example', 'image_url', 'notes']:
             widget = TextBox(3, keyword.title(), keyword, as_string=True)
@@ -150,7 +152,8 @@ class TangoView(Frame):
             c = event.key_code
             # ctr-b for back
             if c == 2:
-                self._back()
+                self.headword_widget.value = ""
+                # self._back()
             # ctrl-n for next
             if c == 14:
                 self._next()
@@ -168,24 +171,21 @@ class TangoView(Frame):
         # Now pass on to lower levels for normal handling of the event.
         return super(TangoView, self).process_event(event)
 
+def tui(language, headword):
+    def player(screen, scene, tango_model, initial_data):
+        scenes = [
+            Scene([TangoView(screen, tango_model)], -1, name="Add Tango")
+        ]
+        screen.play(scenes, stop_on_resize=True, start_scene=scene)
 
-def demo(screen, scene, tango_model):
-    scenes = [
-        Scene([TangoView(screen, tango_model)], -1, name="Add Tango")
-    ]
-
-    screen.play(scenes, stop_on_resize=True, start_scene=scene)
-
-def main(language):
     tango_model = TangoModel()
     tango_model.language = language
+    tango_model.default_headword = headword
     last_scene = None
     while True:
         try:
-            Screen.wrapper(demo, catch_interrupt=True, arguments=[last_scene, tango_model])
+            Screen.wrapper(player, catch_interrupt=True, arguments=[last_scene, tango_model, {"headword": headword}])
             sys.exit(0)
         except ResizeScreenError as e:
             last_scene = e.scene
 
-if __name__ == '__main__':
-    main('de')
