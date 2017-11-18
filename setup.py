@@ -32,7 +32,7 @@ setup(
     author="Nathan Glenn",
     author_email='garfieldnate@gmail.com',
     url='https://github.com/garfieldnate/tango',
-    packages=find_packages(include=['tango']),
+    packages=find_packages(),
     entry_points={
         'console_scripts': [
             'tango=tango.cli:main'
@@ -42,7 +42,7 @@ setup(
     install_requires=requirements,
     license="MIT license",
     zip_safe=False,
-    keywords='tango',
+    keywords=['education', 'vocabulary', 'spaced repetition'],
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',

@@ -9,8 +9,8 @@ from asciimatics.screen import Screen
 from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget
 
-import utils
-from utils import debug_print
+from .. import utils
+from ..utils import debug_print
 
 class TangoModel(object):
     def __init__(self):
@@ -181,6 +181,7 @@ def tui(language, headword):
     tango_model.language = language
     tango_model.default_headword = headword
     last_scene = None
+    debug_print("wassup")
     while True:
         try:
             Screen.wrapper(player, catch_interrupt=True, arguments=[last_scene, tango_model, {"headword": headword}])

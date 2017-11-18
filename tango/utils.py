@@ -1,6 +1,7 @@
 import base64
 import datetime
 import json
+import logging
 from pathlib import Path
 import requests
 from string import Template
@@ -8,9 +9,15 @@ from urllib.parse import quote as url_quote
 
 dic_path = Path.home() / 'dic_lookups'
 
-debug_file = open(Path.home() / "dic_lookups/debug.log", 'w+')
+logger = logging.getLogger(__name__)
+fh = logging.FileHandler(str(Path.home() / "dic_lookups/debug.log"))
+fh.setLevel(logging.DEBUG)
+logger.addHandler(fh)
+logger.setLevel(logging.DEBUG)
 def debug_print(message):
-    print(message, file=debug_file, flush=True)
+    """Print message to log file (colocated with dictionary files) and flush immediately"""
+    logger.debug(message)
+    logger.handlers[0].flush()
 
 # Pretend to be a browser or some servers won't allow image access (lookin' at you, Etsy!)
 REQUEST_HEADERS = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
