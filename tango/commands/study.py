@@ -13,6 +13,8 @@ from asciimatics.screen import Screen
 from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget, Label
 
+from ..utils import debug_print
+
 dic_path = Path.home() / 'dic_lookups'
 
 class ViewState():
@@ -33,9 +35,79 @@ class ViewState():
             return
         self.tango_index -= 1
 
-class TangoView(Frame):
+class FrontView(Frame):
     def __init__(self, screen, entries, view_state):
-        super(TangoView, self).__init__(screen,
+        super(FrontView, self).__init__(screen,
+                                          screen.height * 2 // 3,
+                                          screen.width * 2 // 3,
+                                          hover_focus=True,
+                                          title="Tango",
+                                          reduce_cpu=True)
+        self.disabled = True
+        self.entries = entries
+        self.view_state = view_state
+        self.data = view_state.current_tango()
+
+        # Create the form for displaying the list of contacts.
+        layout = Layout([100], fill_frame=True)
+        self.add_layout(layout)
+
+        # TODO: uneditable Text widget
+        widget = Text("Headword", "headword")
+        layout.add_widget(widget)
+
+        layout2 = Layout([1, 1, 1, 1])
+        self.add_layout(layout2)
+        layout2.add_widget(Button("Back", self._back), 0)
+        layout2.add_widget(Button("Next", self._next), 1)
+        layout2.add_widget(Button("Flip", self._flip), 2)
+        layout2.add_widget(Button("Exit", self._exit), 3)
+        self.fix()
+
+    @staticmethod
+    def _exit():
+        raise StopApplication("User terminated app")
+
+    def reset(self):
+        # Do standard reset to clear out form, then populate with new data.
+        super(FrontView, self).reset()
+        self.data = self.view_state.current_tango()
+
+    def _next(self):
+        self.view_state.next_tango()
+        raise NextScene("FrontView")
+
+    def _back(self):
+        self.view_state.previous_tango()
+        raise NextScene("FrontView")
+
+    def _flip(self):
+        debug_print("Flipping to back")
+        raise NextScene("BackView")
+
+    def process_event(self, event):
+        if isinstance(event, KeyboardEvent):
+            c = event.key_code
+            # ctr-b for back
+            if c == 2:
+                self._back()
+            # ctrl-f for flip
+            elif c == 6:
+                self._flip()
+            # ctrl-n for next
+            elif c == 14:
+                self._next()
+            # raise ValueError(c)
+            # Stop on ctrl+q, ctrl-x: TODO: something else is stealing the ctrl-q event
+            elif c in (17, 24):
+                self._exit()
+
+        # Now pass on to lower levels for normal handling of the event.
+        return super(FrontView, self).process_event(event)
+
+class BackView(Frame):
+    def __init__(self, screen, entries, view_state):
+        super(BackView, self).__init__(screen,
                                           screen.height * 2 // 3,
                                           screen.width * 2 // 3,
                                           hover_focus=True,
@@ -51,19 +123,18 @@ class TangoView(Frame):
         self.add_layout(layout)
         for keyword in ['headword', 'morphology', 'definition', 'example', 'notes']:
             if keyword == 'headword':
+                # TODO: uneditable Text widget
                 widget = Text(keyword.title(), keyword)
-                widget.disabled = True
-                widget.custom_colour = "edit_text"
                 layout.add_widget(widget)
             else:
+                # TODO: uneditable TextBox widget
                 widget = TextBox(3, keyword.title(), keyword, as_string=True)
-                widget.disabled = True
-                widget.custom_colour = "edit_text"
                 layout.add_widget(widget)
         layout2 = Layout([1, 1, 1, 1])
         self.add_layout(layout2)
         layout2.add_widget(Button("Back", self._back), 0)
         layout2.add_widget(Button("Next", self._next), 1)
+        layout2.add_widget(Button("Flip", self._flip), 2)
         layout2.add_widget(Button("Exit", self._exit), 3)
         self.fix()
 
@@ -72,18 +143,21 @@ class TangoView(Frame):
         raise StopApplication("User terminated app")
 
     def reset(self):
-        pass
         # Do standard reset to clear out form, then populate with new data.
-        super(TangoView, self).reset()
+        super(BackView, self).reset()
         self.data = self.view_state.current_tango()
 
     def _next(self):
         self.view_state.next_tango()
-        raise NextScene()
+        raise NextScene("FrontView")
 
     def _back(self):
         self.view_state.previous_tango()
-        raise NextScene()
+        raise NextScene("FrontView")
+
+    def _flip(self):
+        debug_print("Flipping to back")
+        raise NextScene("FrontView")
 
     def process_event(self, event):
         if isinstance(event, KeyboardEvent):
@@ -91,8 +165,11 @@ class TangoView(Frame):
             # ctr-b for back
             if c == 2:
                 self._back()
+            # ctrl-f for flip
+            elif c == 6:
+                self._flip()
             # ctrl-n for next
-            if c == 6:
+            elif c == 14:
                 self._next()
             # raise ValueError(c)
             # Stop on ctrl+q, ctrl-x: TODO: something else is stealing the ctrl-q event
@@ -100,7 +177,7 @@ class TangoView(Frame):
                 self._exit()
 
         # Now pass on to lower levels for normal handling of the event.
-        return super(TangoView, self).process_event(event)
+        return super(BackView, self).process_event(event)
 
 def tui(language):
     """Review the tango for the selected language. If 'all' (default), review all tango for all languages.
@@ -116,10 +193,13 @@ def tui(language):
             for line in f:
                 entries.append(json.loads(line.strip()))
 
-    # index- the index of the entry currently shown in TangoView
+    # index- the index of the tango currently shown
     view_state = ViewState(entries)
     def show_cards(screen, start_scene):
-        scenes = [Scene([TangoView(screen, entries, view_state)], -1, name="TangoView")]
+        scenes = [
+            Scene([FrontView(screen, entries, view_state)], -1, name="FrontView"),
+            Scene([BackView(screen, entries, view_state)], -1, name="BackView")
+        ]
         screen.play(scenes, stop_on_resize=True, start_scene=start_scene)
 
     current_scene = None
