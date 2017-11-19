@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 import requests
 from string import Template
+import sqlite3
 from urllib.parse import quote as url_quote
 
 dic_path = Path.home() / 'dic_lookups'
@@ -18,6 +19,9 @@ def debug_print(message):
     """Print message to log file (colocated with dictionary files) and flush immediately"""
     logger.debug(message)
     logger.handlers[0].flush()
+
+def get_db():
+    return sqlite3.connect(str(dic_path/"tango.db"))
 
 # Pretend to be a browser or some servers won't allow image access (lookin' at you, Etsy!)
 REQUEST_HEADERS = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
