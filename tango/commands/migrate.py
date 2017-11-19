@@ -6,7 +6,7 @@ from os.path import isfile, join
 from ..utils import get_db, dic_path
 from .. import utils
 
-fields = ["created", "headword", "pronunciation", "morphology", "definition", "example", "image_url", "image_base64", "notes"]
+fields = ["created", "headword", "pronunciation", "morphology", "definition", "example", "image_url", "image_base64", "notes", "review_data"]
 def migrate():
     db = get_db()
     dic_files = [dic_path / f for f in listdir(dic_path) if isfile(dic_path / f) and f.endswith('.txt')]

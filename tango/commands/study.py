@@ -13,9 +13,8 @@ from asciimatics.screen import Screen
 from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget, Label
 
+from .. import utils
 from ..utils import debug_print
-
-dic_path = Path.home() / 'dic_lookups'
 
 class ViewState():
     def __init__(self, entries):
@@ -179,19 +178,19 @@ class BackView(Frame):
         # Now pass on to lower levels for normal handling of the event.
         return super(BackView, self).process_event(event)
 
-def tui(language):
+def tui(lang):
     """Review the tango for the selected language. If 'all' (default), review all tango for all languages.
     Shortcuts: ctrl-f=forward, ctrl-b=backward, ctrl-x=quit."""
-    if language == 'all':
-        dic_files = [dic_path / f for f in listdir(dic_path) if isfile(dic_path / f)]
+    if lang == 'all':
+        languages = utils.get_all_languages()
     else:
-        dic_files = [join(dic_path, language + '.txt')]
+        languages = [lang]
+
+    db = utils.get_db()
 
     entries = []
-    for file in dic_files:
-        with open(file) as f:
-            for line in f:
-                entries.append(json.loads(line.strip()))
+    for language in languages:
+        entries.extend(db.cursor().execute(f"SELECT * FROM {language};").fetchall())
 
     # index- the index of the tango currently shown
     view_state = ViewState(entries)
