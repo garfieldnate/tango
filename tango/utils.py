@@ -8,10 +8,10 @@ from string import Template
 import sqlite3
 from urllib.parse import quote as url_quote
 
-dic_path = Path.home() / 'dic_lookups'
+app_data_path = Path.home() / '.tangocho'
 
 logger = logging.getLogger(__name__)
-fh = logging.FileHandler(str(Path.home() / "dic_lookups/debug.log"))
+fh = logging.FileHandler(str(app_data_path / "debug.log"))
 fh.setLevel(logging.DEBUG)
 logger.addHandler(fh)
 logger.setLevel(logging.DEBUG)
@@ -21,7 +21,7 @@ def debug_print(message):
     logger.handlers[0].flush()
 
 def get_db():
-    db = sqlite3.connect(str(dic_path/"tango.db"))
+    db = sqlite3.connect(str(app_data_path / "tango.db"))
     db.row_factory = sqlite3.Row
     return db
 
@@ -67,6 +67,6 @@ def get_formatted_datetime():
 # Data-related functions
 
 def save_tango(lang, tango):
-    output_file = dic_path / (lang + '.txt')
+    output_file = app_data_path / (lang + '.txt')
     with open(output_file, 'a') as f:
         print(json.dumps(tango), file=f)

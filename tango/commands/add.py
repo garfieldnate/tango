@@ -35,6 +35,7 @@ class TangoModel(object):
             VALUES(:created, :headword, :morphology, :definition, :example, :image_url, :image_base64, :notes)''',
             tango)
         self._db.commit()
+        debug_print(tango)
         self.current_id = cursor.lastrowid
 
     def get_tango(self, contact_id):
