@@ -13,26 +13,11 @@ from .. import utils
 from ..utils import debug_print
 
 class TangoModel(object):
-    def __init__(self):
+    def __init__(self, language, headword):
+        self.language = language
+        self.default_headword = headword
         # Create a database in RAM
-        self._db = sqlite3.connect(':memory:')
-        self._db.row_factory = sqlite3.Row
-
-        # Create the basic contact table.
-        self._db.cursor().execute('''
-            CREATE TABLE contacts(
-                id INTEGER PRIMARY KEY,
-                created TEXT,
-                headword TEXT,
-                morphology TEXT,
-                definition TEXT,
-                example TEXT,
-                image_url TEXT,
-                image TEXT,
-                notes TEXT)
-        ''')
-        self._db.commit()
-
+        self._db = utils.get_db()
         # Current contact when editing.
         self.current_id = None
 
@@ -41,45 +26,37 @@ class TangoModel(object):
         tango['image_url'] = tango['image_url'].strip()
         if tango['image_url']:
             try:
-                tango['image'] = utils.get_url_as_base64text(tango['image_url'])
+                tango['image_base64'] = utils.get_url_as_base64text(tango['image_url'])
             except Exception as e:
                 debug_print("Error: Could not download image: " + str(e))
-        self._db.cursor().execute('''
-            INSERT INTO contacts(created, headword, morphology, definition, example, image_url, image, notes)
-            VALUES(:created, :headword, :morphology, :definition, :example, :image_url, :image, :notes)''',
-                                  tango)
+        cursor = self._db.cursor()
+        cursor.execute(f'''
+            INSERT INTO {self.language}(created, headword, morphology, definition, example, image_url, image_base64, notes)
+            VALUES(:created, :headword, :morphology, :definition, :example, :image_url, :image_base64, :notes)''',
+            tango)
         self._db.commit()
-        utils.save_tango(self.language, tango)
+        self.current_id = cursor.lastrowid
 
-    def get_summary(self):
+    def get_tango(self, contact_id):
         return self._db.cursor().execute(
-            "SELECT headword, id from contacts").fetchall()
-
-    def get_contact(self, contact_id):
-        return self._db.cursor().execute(
-            "SELECT * from contacts WHERE id=:id", {"id": contact_id}).fetchone()
+            f"SELECT * from {self.language} WHERE id=:id", {"id": contact_id}).fetchone()
 
     def get_current_contact(self):
         if self.current_id is None:
             headword = self.default_headword if self.default_headword else ""
-            return {"headword": headword, "morphology": "", "definition": "", "example": "", "notes": "", "image_url": "", "image": ""}
+            return {"headword": headword, "morphology": "", "definition": "", "example": "", "notes": "", "image_url": "", "image_base64": ""}
         else:
-            return self.get_contact(self.current_id)
+            return self.get_tango(self.current_id)
 
-    def update_current_contact(self, details):
+    def update_current_contact(self, tango):
         if self.current_id is None:
-            self.add(details)
+            self.add(tango)
         else:
-            self._db.cursor().execute('''
-                UPDATE contacts SET headword=:headword, morphology=:morphology, definition=:definition, example=:example, image_url=:image_url, notes=:notes
+            self._db.cursor().execute(f'''
+                UPDATE {self.language} SET headword=:headword, morphology=:morphology, definition=:definition, example=:example, image_url=:image_url, image_base64=:image_base64, notes=:notes
                 WHERE id=:id''',
-                                      details)
+                tango)
             self._db.commit()
-
-    def delete_contact(self, contact_id):
-        self._db.cursor().execute('''
-            DELETE FROM contacts WHERE id=:id''', {"id": contact_id})
-        self._db.commit()
 
 class TangoView(Frame):
     def __init__(self, screen, model):
@@ -177,9 +154,7 @@ def tui(language, headword):
         ]
         screen.play(scenes, stop_on_resize=True, start_scene=scene)
 
-    tango_model = TangoModel()
-    tango_model.language = language
-    tango_model.default_headword = headword
+    tango_model = TangoModel(language, headword)
     last_scene = None
     debug_print("wassup")
     while True:
