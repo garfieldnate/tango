@@ -31,7 +31,7 @@ class TangoModel(object):
                 debug_print("Error: Could not download image: " + str(e))
         cursor = self._db.cursor()
         cursor.execute(f'''
-            INSERT INTO {self.language}(created, headword, morphology, definition, example, image_url, image_base64, notes)
+            INSERT INTO {self.language} (created, headword, morphology, definition, example, image_url, image_base64, notes)
             VALUES(:created, :headword, :morphology, :definition, :example, :image_url, :image_base64, :notes)''',
             tango)
         self._db.commit()
@@ -156,6 +156,8 @@ def tui(language, headword):
         screen.play(scenes, stop_on_resize=True, start_scene=scene)
 
     tango_model = TangoModel(language, headword)
+    if not utils.validate_language(language):
+        return
     last_scene = None
     debug_print("wassup")
     while True:

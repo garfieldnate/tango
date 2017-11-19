@@ -11,7 +11,7 @@ def main():
 
 @main.command()
 @click.argument('language')
-@click.argument('headword')
+@click.argument('headword', default=None)
 def add(language, headword):
     tui_add(language, headword)
 

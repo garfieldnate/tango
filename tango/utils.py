@@ -8,7 +8,11 @@ from string import Template
 import sqlite3
 from urllib.parse import quote as url_quote
 
+import click
+
 app_data_path = Path.home() / '.tangocho'
+
+db_fields = ["created", "headword", "pronunciation", "morphology", "definition", "example", "image_url", "image_base64", "notes", "review_data"]
 
 logger = logging.getLogger(__name__)
 fh = logging.FileHandler(str(app_data_path / "debug.log"))
@@ -31,6 +35,24 @@ def get_all_languages():
     table_names = [t['name'] for t in tables]
     languages = [name for name in table_names if not name.startswith('sqlite')]
     return languages
+
+def validate_language(lang):
+    if lang.startswith("sqlite"):
+        raise ValueError("Illegal language name: " + lang)
+    languages = get_all_languages()
+    if lang in languages:
+        return True
+    else:
+        if click.confirm(f"No tango-cho for {lang} exists. Create?", default=False):
+            get_db().cursor().execute(f"CREATE TABLE {lang} (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                ",".join([f"{field} TEXT" for field in db_fields]) +
+                ")"
+                )
+            return True
+        else:
+            return False
+
 
 # Pretend to be a browser or some servers won't allow image access (lookin' at you, Etsy!)
 REQUEST_HEADERS = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
