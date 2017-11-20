@@ -11,14 +11,14 @@ from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
 
 from .. import utils
 from ..utils import debug_print
+from ..model import get_model
 
 class TangoModel(object):
     def __init__(self, language, headword):
         self.language = language
         self.default_headword = headword
-        # Create a database in RAM
-        self._db = utils.get_db()
-        # Current contact when editing.
+        self._model = get_model()
+        # Current tango when editing.
         self.current_id = None
 
     def add(self, tango):
@@ -29,35 +29,21 @@ class TangoModel(object):
                 tango['image_base64'] = utils.get_url_as_base64text(tango['image_url'])
             except Exception as e:
                 debug_print("Error: Could not download image: " + str(e))
-        cursor = self._db.cursor()
-        cursor.execute(f'''
-            INSERT INTO {self.language} (created, headword, morphology, definition, example, image_url, image_base64, notes)
-            VALUES(:created, :headword, :morphology, :definition, :example, :image_url, :image_base64, :notes)''',
-            tango)
-        self._db.commit()
-        debug_print(tango)
-        self.current_id = cursor.lastrowid
 
-    def get_tango(self, contact_id):
-        return self._db.cursor().execute(
-            f"SELECT * from {self.language} WHERE id=:id", {"id": contact_id}).fetchone()
+        self.current_id = self._model.add_tango(self.language, tango)
 
     def get_current_contact(self):
         if self.current_id is None:
             headword = self.default_headword if self.default_headword else ""
             return {"headword": headword, "morphology": "", "definition": "", "example": "", "notes": "", "image_url": "", "image_base64": ""}
         else:
-            return self.get_tango(self.current_id)
+            return self._model.get_tango(self.language, self.current_id)
 
     def update_current_contact(self, tango):
         if self.current_id is None:
             self.add(tango)
         else:
-            self._db.cursor().execute(f'''
-                UPDATE {self.language} SET headword=:headword, morphology=:morphology, definition=:definition, example=:example, image_url=:image_url, image_base64=:image_base64, notes=:notes
-                WHERE id=:id''',
-                tango)
-            self._db.commit()
+            self._model.update_tango()
 
 class TangoView(Frame):
     def __init__(self, screen, model):
@@ -156,7 +142,7 @@ def tui(language, headword):
         screen.play(scenes, stop_on_resize=True, start_scene=scene)
 
     tango_model = TangoModel(language, headword)
-    if not utils.validate_language(language):
+    if not get_model().validate_language(language):
         return
     last_scene = None
     debug_print("wassup")

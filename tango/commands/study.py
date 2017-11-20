@@ -16,6 +16,8 @@ from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
 from .. import utils
 from ..utils import debug_print
 
+from ..model import get_model
+
 class ViewState():
     def __init__(self, entries):
         self.entries = entries
@@ -181,16 +183,7 @@ class BackView(Frame):
 def tui(lang):
     """Review the tango for the selected language. If 'all' (default), review all tango for all languages.
     Shortcuts: ctrl-f=forward, ctrl-b=backward, ctrl-x=quit."""
-    if lang == 'all':
-        languages = utils.get_all_languages()
-    else:
-        languages = [lang]
-
-    db = utils.get_db()
-
-    entries = []
-    for language in languages:
-        entries.extend(db.cursor().execute(f"SELECT * FROM {language};").fetchall())
+    entries = get_model().get_tango_for_language(lang)
 
     # index- the index of the tango currently shown
     view_state = ViewState(entries)
