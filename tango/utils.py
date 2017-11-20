@@ -15,6 +15,9 @@ app_data_path.mkdir(parents=True, exist_ok=True)
 
 db_fields = ["created", "headword", "pronunciation", "morphology", "definition", "example", "image_url", "image_base64", "notes", "review_data"]
 
+# ASCII ctrl-a is 1, ASCII a is 97, etc.
+ascii_ctrl_diff = 96
+
 logger = logging.getLogger(__name__)
 fh = logging.FileHandler(str(app_data_path / "debug.log"))
 fh.setLevel(logging.DEBUG)

@@ -1,10 +1,22 @@
+from enum import Enum, auto
 import json
 from pathlib import Path
 import sqlite3
 
-from .utils import app_data_path, debug_print
+from .utils import app_data_path, debug_print, get_formatted_datetime
 
 db_path = app_data_path / "tango.db"
+
+class Score(Enum):
+    BAD = auto()
+    OK = auto()
+    GREAT = auto()
+
+scores = {
+    Score.BAD: 0.0,
+    Score.OK: 0.5,
+    Score.GREAT: 1.0,
+}
 
 class Model:
     def __init__(self):
@@ -41,6 +53,7 @@ class Model:
                     ",".join([f"{field} TEXT" for field in db_fields]) +
                     ")"
                     )
+                self._db.commit()
                 self._all_languages.extend(lang)
                 return True
             else:
@@ -50,14 +63,14 @@ class Model:
         if lang not in self._all_languages:
             raise ValueError("No such language: " + lang)
         return self._db.cursor().execute(
-            f"SELECT * from {lang} WHERE id=:id", {"id": tango_id}).fetchone()
+            f"SELECT *, '{lang}' as lang from {lang} WHERE id=:id", {"id": tango_id}).fetchone()
 
     def get_tango_for_language(self, lang):
         """Return a list of all of the tango for the given language. If lang is 'all', then
         all tango for all languages are returned."""
 
         def get_for_one_language(lang):
-            return self._db.cursor().execute(f"SELECT * FROM {lang};").fetchall()
+            return self._db.cursor().execute(f"SELECT *, '{lang}' as lang FROM {lang};").fetchall()
 
         if lang == 'all':
             entries = []
@@ -91,8 +104,16 @@ class Model:
             tango)
         self._db.commit()
 
-    def record_study(self, lang, tango_id):
-        pass
+    def record_study(self, tango, score):
+        cursor = self._db.cursor()
+        debug_print(tango)
+        debug_print(f'''
+            INSERT INTO review (lang, tango_id, timestamp, score)
+            VALUES(:lang, :id, '{get_formatted_datetime()}', {scores[score]})''')
+        cursor.execute(f'''
+            INSERT INTO review (lang, tango_id, timestamp, score)
+            VALUES(:lang, :id, '{get_formatted_datetime()}', {scores[score]})''', tango)
+        self._db.commit()
 
 model_instance = Model()
 

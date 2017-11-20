@@ -14,9 +14,9 @@ from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget, Label
 
 from .. import utils
-from ..utils import debug_print
+from ..utils import debug_print, ascii_ctrl_diff
 
-from ..model import get_model
+from ..model import get_model, Score
 
 class ViewState():
     def __init__(self, entries):
@@ -59,10 +59,10 @@ class FrontView(Frame):
 
         layout2 = Layout([1, 1, 1, 1])
         self.add_layout(layout2)
-        layout2.add_widget(Button("Back", self._back), 0)
-        layout2.add_widget(Button("Next", self._next), 1)
-        layout2.add_widget(Button("Flip", self._flip), 2)
-        layout2.add_widget(Button("Exit", self._exit), 3)
+        layout2.add_widget(Button("Back [b]", self._back), 0)
+        layout2.add_widget(Button("Next [n]", self._next), 1)
+        layout2.add_widget(Button("Flip [f]", self._flip), 2)
+        layout2.add_widget(Button("Exit [q]", self._exit), 3)
         self.fix()
 
     @staticmethod
@@ -89,18 +89,17 @@ class FrontView(Frame):
     def process_event(self, event):
         if isinstance(event, KeyboardEvent):
             c = event.key_code
-            # ctr-b for back
-            if c == 2:
+            # b for back
+            if c in (2, 2+ascii_ctrl_diff):
                 self._back()
-            # ctrl-f for flip
-            elif c == 6:
+            # f for flip
+            elif c in (6, 6+ascii_ctrl_diff):
                 self._flip()
-            # ctrl-n for next
-            elif c == 14:
+            # n for next
+            elif c in (14, 14+ascii_ctrl_diff):
                 self._next()
-            # raise ValueError(c)
-            # Stop on ctrl+q, ctrl-x: TODO: something else is stealing the ctrl-q event
-            elif c in (17, 24):
+            # q for next
+            elif c in (17, 17+ascii_ctrl_diff):
                 self._exit()
 
         # Now pass on to lower levels for normal handling of the event.
@@ -131,12 +130,16 @@ class BackView(Frame):
                 # TODO: uneditable TextBox widget
                 widget = TextBox(3, keyword.title(), keyword, as_string=True)
                 layout.add_widget(widget)
-        layout2 = Layout([1, 1, 1, 1])
+        layout2 = Layout([1, 1, 1, 1, 1])
         self.add_layout(layout2)
-        layout2.add_widget(Button("Back", self._back), 0)
-        layout2.add_widget(Button("Next", self._next), 1)
-        layout2.add_widget(Button("Flip", self._flip), 2)
-        layout2.add_widget(Button("Exit", self._exit), 3)
+        layout2.add_widget(Button("Bad [a]", self._score_function(Score.BAD)), 2)
+        layout2.add_widget(Button("OK [s]", self._score_function(Score.OK)), 3)
+        layout2.add_widget(Button("Great [d]", self._score_function(Score.GREAT)), 4)
+
+        layout2.add_widget(Button("Back [b]", self._back), 0)
+        layout2.add_widget(Button("Flip [f]", self._flip), 0)
+        layout2.add_widget(Button("Exit [q]", self._exit), 1)
+
         self.fix()
 
     @staticmethod
@@ -148,41 +151,44 @@ class BackView(Frame):
         super(BackView, self).reset()
         self.data = self.view_state.current_tango()
 
-    def _next(self):
-        self.view_state.next_tango()
-        raise NextScene("FrontView")
-
     def _back(self):
         self.view_state.previous_tango()
         raise NextScene("FrontView")
 
     def _flip(self):
-        debug_print("Flipping to back")
         raise NextScene("FrontView")
+
+    def _score_function(self, score):
+        def record_in_model():
+            get_model().record_study(self.data, score)
+            self._next()
+        return record_in_model
 
     def process_event(self, event):
         if isinstance(event, KeyboardEvent):
             c = event.key_code
-            # ctr-b for back
-            if c == 2:
+            # scores are arranged like the qwerty arrow alternative: asd = bad good great
+            if c in (1, 1+ascii_ctrl_diff):
+                self._score_function(Score.BAD)()
+            if c in (19, 19+ascii_ctrl_diff):
+                self._score_function(Score.OK)()
+            if c in (4, 4+ascii_ctrl_diff):
+                self._score_function(Score.GREAT)()
+            # b for back
+            if c in (2, 2+ascii_ctrl_diff):
                 self._back()
-            # ctrl-f for flip
-            elif c == 6:
+            # f for flip
+            elif c in (6, 6+ascii_ctrl_diff):
                 self._flip()
-            # ctrl-n for next
-            elif c == 14:
-                self._next()
-            # raise ValueError(c)
-            # Stop on ctrl+q, ctrl-x: TODO: something else is stealing the ctrl-q event
-            elif c in (17, 24):
+            # Stop on q
+            elif c in (17, 17+ascii_ctrl_diff):
                 self._exit()
 
         # Now pass on to lower levels for normal handling of the event.
         return super(BackView, self).process_event(event)
 
 def tui(lang):
-    """Review the tango for the selected language. If 'all' (default), review all tango for all languages.
-    Shortcuts: ctrl-f=forward, ctrl-b=backward, ctrl-x=quit."""
+    """Review the tango for the selected language. If 'all' (default), review all tango for all languages."""
     entries = get_model().get_tango_for_language(lang)
 
     # index- the index of the tango currently shown

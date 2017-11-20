@@ -80,7 +80,7 @@ class TangoView(Frame):
         layout2 = Layout([1, 1, 1, 1])
         self.add_layout(layout2)
         layout2.add_widget(Button("Done", self._save_and_quit), 0)
-        layout2.add_widget(Button("Next", self._save_and_next), 0)
+        layout2.add_widget(Button("Next", self._save_and_next), 1)
         layout2.add_widget(Button("Cancel", self._quit), 3)
         self.fix()
 
