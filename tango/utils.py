@@ -11,6 +11,7 @@ from urllib.parse import quote as url_quote
 import click
 
 app_data_path = Path.home() / '.tangocho'
+app_data_path.mkdir(parents=True, exist_ok=True)
 
 db_fields = ["created", "headword", "pronunciation", "morphology", "definition", "example", "image_url", "image_base64", "notes", "review_data"]
 
