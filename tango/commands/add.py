@@ -1,17 +1,17 @@
 import sys
-import sqlite3
 import webbrowser
 
 from asciimatics.event import KeyboardEvent
-from asciimatics.exceptions import ResizeScreenError, NextScene, StopApplication
+from asciimatics.exceptions import ResizeScreenError, StopApplication
 from asciimatics.scene import Scene
 from asciimatics.screen import Screen
-from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
-    Button, TextBox, Widget
+from asciimatics.widgets import Frame, Layout, Text, \
+    Button, TextBox
 
 from .. import utils
-from ..utils import debug_print
 from ..model import get_model
+from ..utils import debug_print
+
 
 class TangoModel(object):
     def __init__(self, language, headword):
@@ -34,7 +34,8 @@ class TangoModel(object):
     def get_current_contact(self):
         if self.current_id is None:
             headword = self.default_headword if self.default_headword else ""
-            return {"headword": headword, "morphology": "", "definition": "", "example": "", "notes": "", "image_url": "", "image_base64": ""}
+            return {"headword": headword, "morphology": "", "definition": "", "example": "", "notes": "",
+                    "image_url": "", "image_base64": ""}
         else:
             return self._model.get_tango(self.language, self.current_id)
 
@@ -44,14 +45,15 @@ class TangoModel(object):
         else:
             self._model.update_tango()
 
+
 class TangoView(Frame):
     def __init__(self, screen, model):
         super(TangoView, self).__init__(screen,
-                                          screen.height * 2 // 3,
-                                          screen.width * 2 // 3,
-                                          hover_focus=True,
-                                          title="Tango",
-                                          reduce_cpu=True)
+                                        screen.height * 2 // 3,
+                                        screen.width * 2 // 3,
+                                        hover_focus=True,
+                                        title="Tango",
+                                        reduce_cpu=True)
         # Save off the model that accesses the contacts database.
         self._model = model
         self._model.current_focus = ''
@@ -62,6 +64,7 @@ class TangoView(Frame):
                 # TODO: would be better if we could just query the headword widget's current value
                 self.save()
                 self._model.current_focus = name
+
             return on_focus
 
         # Create the form for displaying the list of contacts.
@@ -69,12 +72,12 @@ class TangoView(Frame):
         self.add_layout(layout)
 
         headword_widget = Text("Headword", "headword")
-        headword_widget._on_focus=note_focus("headword")
+        headword_widget._on_focus = note_focus("headword")
         self.headword_widget = headword_widget
         layout.add_widget(headword_widget)
         for keyword in ['morphology', 'definition', 'example', 'image_url', 'notes']:
             widget = TextBox(3, keyword.title(), keyword, as_string=True)
-            widget._on_focus=note_focus(keyword)
+            widget._on_focus = note_focus(keyword)
             layout.add_widget(widget)
         layout2 = Layout([1, 1, 1, 1])
         self.add_layout(layout2)
@@ -128,10 +131,11 @@ class TangoView(Frame):
                     webbrowser.open(utils.get_wiktionary_url(self._model.language, self.data["headword"]), new=2)
                 elif self._model.current_focus == 'image_url':
                     webbrowser.open(utils.get_image_search_url(self._model.language, self.data["headword"]), new=2)
-            # TODO: pressing down arrow should go to next widget if cursor is at end of line
+                    # TODO: pressing down arrow should go to next widget if cursor is at end of line
 
         # Now pass on to lower levels for normal handling of the event.
         return super(TangoView, self).process_event(event)
+
 
 def tui(language, headword):
     def player(screen, scene, tango_model, initial_data):
@@ -151,4 +155,3 @@ def tui(language, headword):
             sys.exit(0)
         except ResizeScreenError as e:
             last_scene = e.scene
-

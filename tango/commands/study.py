@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import sys
 
 from asciimatics.event import KeyboardEvent
@@ -8,10 +6,9 @@ from asciimatics.scene import Scene
 from asciimatics.screen import Screen
 from asciimatics.widgets import Frame, Layout, Text, Button, TextBox
 
-from ..utils import debug_print, ascii_ctrl_diff
-
 from ..model import get_model, Score
 from ..sm2_plus import update_sm2p, prioritize_study
+from ..utils import debug_print, ascii_ctrl_diff
 
 performance_ratings = {
     Score.BAD: 0.0,
@@ -38,14 +35,15 @@ class ViewState():
             return
         self.tango_index -= 1
 
+
 class FrontView(Frame):
     def __init__(self, screen, entries, view_state):
         super(FrontView, self).__init__(screen,
-                                          screen.height * 2 // 3,
-                                          screen.width * 2 // 3,
-                                          hover_focus=True,
-                                          title="Tango",
-                                          reduce_cpu=True)
+                                        screen.height * 2 // 3,
+                                        screen.width * 2 // 3,
+                                        hover_focus=True,
+                                        title="Tango",
+                                        reduce_cpu=True)
         self.disabled = True
         self.entries = entries
         self.view_state = view_state
@@ -92,29 +90,30 @@ class FrontView(Frame):
         if isinstance(event, KeyboardEvent):
             c = event.key_code
             # b for back
-            if c in (2, 2+ascii_ctrl_diff):
+            if c in (2, 2 + ascii_ctrl_diff):
                 self._back()
             # f for flip
-            elif c in (6, 6+ascii_ctrl_diff):
+            elif c in (6, 6 + ascii_ctrl_diff):
                 self._flip()
             # n for next
-            elif c in (14, 14+ascii_ctrl_diff):
+            elif c in (14, 14 + ascii_ctrl_diff):
                 self._next()
             # q for next
-            elif c in (17, 17+ascii_ctrl_diff):
+            elif c in (17, 17 + ascii_ctrl_diff):
                 self._exit()
 
         # Now pass on to lower levels for normal handling of the event.
         return super(FrontView, self).process_event(event)
 
+
 class BackView(Frame):
     def __init__(self, screen, entries, view_state):
         super(BackView, self).__init__(screen,
-                                          screen.height * 2 // 3,
-                                          screen.width * 2 // 3,
-                                          hover_focus=True,
-                                          title="Tango",
-                                          reduce_cpu=True)
+                                       screen.height * 2 // 3,
+                                       screen.width * 2 // 3,
+                                       hover_focus=True,
+                                       title="Tango",
+                                       reduce_cpu=True)
         self.disabled = True
         self.entries = entries
         self.view_state = view_state
@@ -169,30 +168,32 @@ class BackView(Frame):
             get_model().log_study(self.data, score)
             update_sm2p(self.data, performance_ratings[score])
             self._next()
+
         return record_in_model
 
     def process_event(self, event):
         if isinstance(event, KeyboardEvent):
             c = event.key_code
             # scores are arranged like the qwerty arrow alternative: asd = bad good great
-            if c in (1, 1+ascii_ctrl_diff):
+            if c in (1, 1 + ascii_ctrl_diff):
                 self._score_function(Score.BAD)()
-            if c in (19, 19+ascii_ctrl_diff):
+            if c in (19, 19 + ascii_ctrl_diff):
                 self._score_function(Score.OK)()
-            if c in (4, 4+ascii_ctrl_diff):
+            if c in (4, 4 + ascii_ctrl_diff):
                 self._score_function(Score.GREAT)()
             # b for back
-            if c in (2, 2+ascii_ctrl_diff):
+            if c in (2, 2 + ascii_ctrl_diff):
                 self._back()
             # f for flip
-            elif c in (6, 6+ascii_ctrl_diff):
+            elif c in (6, 6 + ascii_ctrl_diff):
                 self._flip()
             # Stop on q
-            elif c in (17, 17+ascii_ctrl_diff):
+            elif c in (17, 17 + ascii_ctrl_diff):
                 self._exit()
 
         # Now pass on to lower levels for normal handling of the event.
         return super(BackView, self).process_event(event)
+
 
 def tui(lang):
     """Review the tango for the selected language. If 'all' (default), review all tango for all languages."""
@@ -200,6 +201,7 @@ def tui(lang):
 
     # index- the index of the tango currently shown
     view_state = ViewState(entries)
+
     def show_cards(screen, start_scene):
         scenes = [
             Scene([FrontView(screen, entries, view_state)], -1, name="FrontView"),

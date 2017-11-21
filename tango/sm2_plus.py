@@ -58,4 +58,3 @@ def prioritize_study(tango_list):
 
     prioritized_tango_list.sort(key=lambda t: t['percent_overdue'], reverse=True)
     return prioritized_tango_list
-
