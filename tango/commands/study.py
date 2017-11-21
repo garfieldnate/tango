@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
 
-import json
-from os import listdir
-from os.path import isfile, join
-from pathlib import Path
 import sys
 
 from asciimatics.event import KeyboardEvent
 from asciimatics.exceptions import ResizeScreenError, NextScene, StopApplication
 from asciimatics.scene import Scene
 from asciimatics.screen import Screen
-from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
-    Button, TextBox, Widget, Label
+from asciimatics.widgets import Frame, Layout, Text, Button, TextBox
 
-from .. import utils
 from ..utils import debug_print, ascii_ctrl_diff
 
 from ..model import get_model, Score
+from ..sm2_plus import update_sm2p
+
+performance_ratings = {
+    Score.BAD: 0.0,
+    Score.OK: 0.5,
+    Score.GREAT: 1.0,
+}
+
 
 class ViewState():
     def __init__(self, entries):
@@ -155,12 +157,17 @@ class BackView(Frame):
         self.view_state.previous_tango()
         raise NextScene("FrontView")
 
+    def _next(self):
+        self.view_state.next_tango()
+        raise NextScene("FrontView")
+
     def _flip(self):
         raise NextScene("FrontView")
 
     def _score_function(self, score):
         def record_in_model():
-            get_model().record_study(self.data, score)
+            get_model().log_study(self.data, score)
+            update_sm2p(self.data, performance_ratings[score])
             self._next()
         return record_in_model
 

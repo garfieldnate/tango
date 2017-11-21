@@ -1,22 +1,21 @@
 from enum import Enum, auto
-import json
-from pathlib import Path
 import sqlite3
 
-from .utils import app_data_path, debug_print, get_formatted_datetime
+import click
+
+from .utils import app_data_path, debug_print, get_current_datetime, get_formatted_datetime
+from .sm2_plus import get_default_variables as get_default_sm2p
 
 db_path = app_data_path / "tango.db"
+
+reserved_tables = ["review_history", "sm2_plus"]
+
+lang_fields = ["created", "headword", "pronunciation", "morphology", "definition", "example", "image_url", "image_base64", "notes"]
 
 class Score(Enum):
     BAD = auto()
     OK = auto()
     GREAT = auto()
-
-scores = {
-    Score.BAD: 0.0,
-    Score.OK: 0.5,
-    Score.GREAT: 1.0,
-}
 
 class Model:
     def __init__(self):
@@ -28,17 +27,53 @@ class Model:
         cursor = self._db.cursor()
         tables = cursor.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()
         table_names = [t['name'] for t in tables]
-        if "review" not in table_names:
-            cursor.execute("""CREATE TABLE review (
+        self._all_languages = [name for name in table_names if not name.startswith('sqlite') and name not in reserved_tables]
+        if "review_history" not in table_names:
+            cursor.execute("""CREATE TABLE review_history (
                     id INTEGER PRIMARY KEY,
                     lang TEXT,
                     tango_id INTEGER,
                     timestamp TEXT,
-                    score INTEGER,
+                    score TEXT,
                     data TEXT
                 )
             """)
-        self._all_languages = [name for name in table_names if not name.startswith('sqlite') and name != "review"]
+            self._db.commit()
+        if "sm2_plus" not in table_names:
+            self._init_sm2p_table()
+
+    def _init_sm2p_table(self):
+        cursor = self._db.cursor()
+        cursor.execute("""CREATE TABLE sm2_plus (
+                lang TEXT,
+                tango_id INTEGER,
+                difficulty REAL,
+                daysBetweenReviews REAL,
+                dateLastReviewed TEXT,
+                PRIMARY KEY  (lang, tango_id)
+            )
+        """)
+        for tango in self.get_tango_for_language('all'):
+            starting_vals = get_default_sm2p(tango)
+            row_data = {**tango, **starting_vals}
+            cursor.execute("""INSERT INTO sm2_plus
+                (lang, tango_id, difficulty, daysBetweenReviews, dateLastReviewed)
+                VALUES (:lang, :id, :difficulty, :daysBetweenReviews, :dateLastReviewed)
+                """, row_data)
+        self._db.commit()
+
+    def get_sm2p_vars(self, tango):
+        cursor = self._db.cursor()
+        return cursor.execute("""SELECT * from sm2_plus
+            where lang=:lang and tango_id=:id""", tango).fetchone()
+
+    def update_sm2p_vars(self, tango, sm2p_vars):
+        row_vars = {**tango, **sm2p_vars}
+        cursor = self._db.cursor()
+        self._db.cursor().execute('''
+            INSERT OR REPLACE INTO sm2_plus (lang, tango_id, difficulty, daysBetweenReviews, dateLastReviewed) VALUES(:lang, :id, :difficulty, :daysBetweenReviews, :dateLastReviewed)''',
+            row_vars)
+        self._db.commit()
 
     def validate_language(self, lang):
         """Check if the given language is legal to use and create a new table for it if needed"""
@@ -50,7 +85,7 @@ class Model:
             if click.confirm(f"No tango-cho for {lang} exists. Create?", default=False):
                 self._db.cursor().execute(f"CREATE TABLE {lang} (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                    ",".join([f"{field} TEXT" for field in db_fields]) +
+                    ",".join([f"{field} TEXT" for field in lang_fields]) +
                     ")"
                     )
                 self._db.commit()
@@ -86,10 +121,11 @@ class Model:
         """Add the tango to the database and return the automatically created ID"""
         if lang not in self._all_languages:
             raise ValueError("No such language: " + lang)
+
         cursor = self._db.cursor()
         cursor.execute(f'''
             INSERT INTO {lang} (created, headword, morphology, definition, example, image_url, image_base64, notes)
-            VALUES(:created, :headword, :morphology, :definition, :example, :image_url, :image_base64, :notes)''',
+            VALUES({get_formatted_datetime(get_current_datetime())}, :headword, :morphology, :definition, :example, :image_url, :image_base64, :notes)''',
             tango)
         self._db.commit()
         debug_print(tango)
@@ -104,15 +140,15 @@ class Model:
             tango)
         self._db.commit()
 
-    def record_study(self, tango, score):
+    def log_study(self, tango, score):
         cursor = self._db.cursor()
-        debug_print(tango)
+        date_now = get_formatted_datetime(get_current_datetime())
         debug_print(f'''
-            INSERT INTO review (lang, tango_id, timestamp, score)
-            VALUES(:lang, :id, '{get_formatted_datetime()}', {scores[score]})''')
+            INSERT INTO review_history (lang, tango_id, timestamp, score)
+            VALUES(:lang, :id, '{date_now}', '{str(score)}')''')
         cursor.execute(f'''
-            INSERT INTO review (lang, tango_id, timestamp, score)
-            VALUES(:lang, :id, '{get_formatted_datetime()}', {scores[score]})''', tango)
+            INSERT INTO review_history (lang, tango_id, timestamp, score)
+            VALUES(:lang, :id, '{date_now}', '{str(score)}')''', tango)
         self._db.commit()
 
 model_instance = Model()

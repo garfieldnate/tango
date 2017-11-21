@@ -22,7 +22,6 @@ class TangoModel(object):
         self.current_id = None
 
     def add(self, tango):
-        tango['created'] = utils.get_formatted_datetime()
         tango['image_url'] = tango['image_url'].strip()
         if tango['image_url']:
             try:

@@ -1,19 +1,17 @@
 import base64
 import datetime
+from dateutil import parser
 import json
 import logging
 from pathlib import Path
 import requests
 from string import Template
-import sqlite3
 from urllib.parse import quote as url_quote
 
 import click
 
 app_data_path = Path.home() / '.tangocho'
 app_data_path.mkdir(parents=True, exist_ok=True)
-
-db_fields = ["created", "headword", "pronunciation", "morphology", "definition", "example", "image_url", "image_base64", "notes", "review_data"]
 
 # ASCII ctrl-a is 1, ASCII a is 97, etc.
 ascii_ctrl_diff = 96
@@ -57,8 +55,16 @@ LEO_URL = Template("https://dict.leo.org/englisch-$lang/$word")
 def get_dictionary_url(lang, word):
     return LEO_URL.substitute(lang=LEO_LANGS[lang], word=url_quote(word))
 
-def get_formatted_datetime():
-    return datetime.datetime.now(datetime.timezone.utc).strftime("%a %b %d %H:%M:%S %Z %Y")
+def get_current_datetime():
+    return datetime.datetime.now(datetime.timezone.utc)
+
+date_format = "%a %b %d %H:%M:%S %Z %Y"
+def get_formatted_datetime(timestamp):
+    return timestamp.strftime(date_format)
+
+def get_datetime_from_string(timestamp_string):
+    debug_print(timestamp_string)
+    return parser.parse(timestamp_string)
 
 # Data-related functions
 
