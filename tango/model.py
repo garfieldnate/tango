@@ -17,10 +17,18 @@ class Score(Enum):
     OK = auto()
     GREAT = auto()
 
+
+# We use regular dictionaries instead of Sqlite3.Row because they can be used with cursor.execute()
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
 class Model:
     def __init__(self):
         self._db = sqlite3.connect(str(db_path))
-        self._db.row_factory = sqlite3.Row
+        self._db.row_factory = dict_factory
         self._check_tables()
 
     def _check_tables(self):
@@ -65,7 +73,7 @@ class Model:
     def get_sm2p_vars(self, tango):
         cursor = self._db.cursor()
         return cursor.execute("""SELECT * from sm2_plus
-            where lang=:lang and tango_id=:id""", tango).fetchone()
+            where lang=:lang and tango_id=:id""", dict(tango)).fetchone()
 
     def update_sm2p_vars(self, tango, sm2p_vars):
         row_vars = {**tango, **sm2p_vars}

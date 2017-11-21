@@ -13,14 +13,11 @@ def get_default_variables(tango):
 
 
 def update_sm2p(tango, performance_rating):
-    db_model = model.get_model()
-    sm2p_vars = dict(db_model.get_sm2p_vars(tango) or {}) or get_default_variables(tango)
+    sm2p_vars = _get_vars_for_tango(tango)
     correct = performance_rating >= correct_threshold
     date_now = get_current_datetime()
     if correct:
-        delta = date_now - get_datetime_from_string(sm2p_vars['dateLastReviewed'])
-        delta_days = float(delta.total_seconds()) / DAY_TO_SECONDS
-        percent_overdue = min(2, delta_days / sm2p_vars['daysBetweenReviews'])
+        percent_overdue = min(2, _get_percent_overdue(date_now, sm2p_vars))
     else:
         percent_overdue = 1
     sm2p_vars['difficulty'] += percent_overdue * 1 / 17 * (8 - 9 * performance_rating)
@@ -31,8 +28,34 @@ def update_sm2p(tango, performance_rating):
         sm2p_vars['daysBetweenReviews'] *= 1 / difficulty_weight ** 2
 
     sm2p_vars['dateLastReviewed'] = date_now
-    db_model.update_sm2p_vars(tango, sm2p_vars)
+    model.get_model().update_sm2p_vars(tango, sm2p_vars)
+
+
+def _get_vars_for_tango(tango):
+    return dict(model.get_model().get_sm2p_vars(tango) or {}) or get_default_variables(tango)
+
+
+def _get_percent_overdue(date_now, sm2p_vars):
+    delta = date_now - get_datetime_from_string(sm2p_vars['dateLastReviewed'])
+    delta_days = float(delta.total_seconds()) / DAY_TO_SECONDS
+    return delta_days / sm2p_vars['daysBetweenReviews']
 
 
 def _get_difficulty_weight(difficulty):
     return 3 - 1.7 * difficulty
+
+
+def prioritize_study(tango_list):
+    """Given the list of all entries available for study, return a list of the ones that should
+    be studied, in the order that they should be studied."""
+    date_now = get_current_datetime()
+    prioritized_tango_list = []
+    for tango in tango_list:
+        sm2p_vars = _get_vars_for_tango(tango)
+        tango['percent_overdue'] = _get_percent_overdue(date_now, sm2p_vars)
+        if tango['percent_overdue'] >= 1:
+            prioritized_tango_list.append(tango)
+
+    prioritized_tango_list.sort(key=lambda t: t['percent_overdue'], reverse=True)
+    return prioritized_tango_list
+

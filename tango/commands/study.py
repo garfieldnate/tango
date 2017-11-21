@@ -11,7 +11,7 @@ from asciimatics.widgets import Frame, Layout, Text, Button, TextBox
 from ..utils import debug_print, ascii_ctrl_diff
 
 from ..model import get_model, Score
-from ..sm2_plus import update_sm2p
+from ..sm2_plus import update_sm2p, prioritize_study
 
 performance_ratings = {
     Score.BAD: 0.0,
@@ -196,7 +196,7 @@ class BackView(Frame):
 
 def tui(lang):
     """Review the tango for the selected language. If 'all' (default), review all tango for all languages."""
-    entries = get_model().get_tango_for_language(lang)
+    entries = prioritize_study(get_model().get_tango_for_language(lang))
 
     # index- the index of the tango currently shown
     view_state = ViewState(entries)
