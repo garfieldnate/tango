@@ -94,10 +94,10 @@ class Model:
         if lang in self._all_languages:
             return True
         else:
-            if click.confirm(f"No tango-cho for {lang} exists. Create?", default=False):
-                self._db.cursor().execute(f"CREATE TABLE {lang} (" +
+            if click.confirm(f"No tango-cho for '{lang}' exists. Create?", default=False):
+                self._db.cursor().execute(f"CREATE TABLE '{lang}' (" +
                                           "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                                          ",".join([f"{field} TEXT" for field in lang_fields]) +
+                                          ",".join([f"'{field}' TEXT" for field in lang_fields]) +
                                           ")"
                                           )
                 self._db.commit()
@@ -110,14 +110,14 @@ class Model:
         if lang not in self._all_languages:
             raise ValueError("No such language: " + lang)
         return self._db.cursor().execute(
-            f"SELECT *, '{lang}' as lang from {lang} WHERE id=:id", {"id": tango_id}).fetchone()
+            f"SELECT *, '{lang}' as lang from '{lang}' WHERE id=:id", {"id": tango_id}).fetchone()
 
     def get_tango_for_language(self, lang):
         """Return a list of all of the tango for the given language. If lang is 'all', then
         all tango for all languages are returned."""
 
         def get_for_one_language(lang):
-            return self._db.cursor().execute(f"SELECT *, '{lang}' as lang FROM {lang};").fetchall()
+            return self._db.cursor().execute(f"SELECT *, '{lang}' as lang FROM '{lang}';").fetchall()
 
         if lang == 'all':
             entries = []
@@ -137,7 +137,7 @@ class Model:
         cursor = self._db.cursor()
         cursor.execute(f'''
             INSERT INTO {lang} (created, headword, morphology, definition, example, image_url, image_base64, notes)
-            VALUES({get_formatted_datetime(get_current_datetime())}, :headword, :morphology, :definition, :example, :image_url, :image_base64, :notes)''',
+            VALUES('{get_formatted_datetime(get_current_datetime())}', :headword, :morphology, :definition, :example, :image_url, :image_base64, :notes)''',
                        tango)
         self._db.commit()
         debug_print(tango)
