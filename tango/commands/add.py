@@ -45,6 +45,9 @@ class TangoModel(object):
         else:
             self._model.update_tango()
 
+    def clear(self):
+        self.current_id = None
+
 
 class TangoView(Frame):
     def __init__(self, screen, model):
@@ -100,6 +103,7 @@ class TangoView(Frame):
         self.save()
         self._model.update_current_contact(self.data)
         self._model.default_headword = None
+        self._model.clear()
         self.reset()
 
     @staticmethod
