@@ -101,6 +101,13 @@ class FrontView(Frame):
             # q for next
             elif c in (17, 17 + ascii_ctrl_diff):
                 self._exit()
+            # disallow all editing
+            elif event.key_code == Screen.KEY_BACK:
+                return event
+            elif event.key_code == Screen.KEY_DELETE:
+                return event
+            elif event.key_code >= 32:
+                return event
 
         # Now pass on to lower levels for normal handling of the event.
         return super(FrontView, self).process_event(event)
@@ -190,6 +197,13 @@ class BackView(Frame):
             # Stop on q
             elif c in (17, 17 + ascii_ctrl_diff):
                 self._exit()
+            # disallow all editing
+            elif event.key_code == Screen.KEY_BACK:
+                return event
+            elif event.key_code == Screen.KEY_DELETE:
+                return event
+            elif event.key_code >= 32:
+                return event
 
         # Now pass on to lower levels for normal handling of the event.
         return super(BackView, self).process_event(event)
