@@ -28,16 +28,14 @@ class TangoModel(object):
                 tango['image_base64'] = utils.get_url_as_base64text(tango['image_url'])
             except Exception as e:
                 debug_print("Error: Could not download image: " + str(e))
-
         self.current_id = self._model.add_tango(self.language, tango)
 
     def get_current_contact(self):
         if self.current_id is None:
             headword = self.default_headword if self.default_headword else ""
-            data = {"headword": headword, "morphology": "", "definition": "", "example": "", "notes": "",
+            pronunciation = headword if headword else ""
+            return {"headword": headword, "pronunciation": pronunciation, "morphology": "", "definition": "", "example": "", "notes": "",
                     "image_url": "", "image_base64": ""}
-            if self.language in PRON_LANGS:
-                data['pronunciation'] = ""
         else:
             return self._model.get_tango(self.language, self.current_id)
 
@@ -159,7 +157,6 @@ def tui(language, headword):
     if not get_model().validate_language(language):
         return
     last_scene = None
-    debug_print("wassup")
     while True:
         try:
             Screen.wrapper(player, catch_interrupt=True, arguments=[last_scene, tango_model, {"headword": headword}])

@@ -134,20 +134,20 @@ class Model:
         if lang not in self._all_languages:
             raise ValueError("No such language: " + lang)
 
+        debug_print(tango)
         cursor = self._db.cursor()
         cursor.execute(f'''
-            INSERT INTO {lang} (created, headword, morphology, definition, example, image_url, image_base64, notes)
-            VALUES('{get_formatted_datetime(get_current_datetime())}', :headword, :morphology, :definition, :example, :image_url, :image_base64, :notes)''',
+            INSERT INTO {lang} (created, headword, pronunciation, morphology, definition, example, image_url, image_base64, notes)
+            VALUES('{get_formatted_datetime(get_current_datetime())}', :headword, :pronunciation, :morphology, :definition, :example, :image_url, :image_base64, :notes)''',
                        tango)
         self._db.commit()
-        debug_print(tango)
         return cursor.lastrowid
 
     def update_tango(self, lang, tango):
         if lang not in self._all_languages:
             raise ValueError("No such language: " + lang)
         self._db.cursor().execute(f'''
-            UPDATE {lang} SET headword=:headword, morphology=:morphology, definition=:definition, example=:example, image_url=:image_url, image_base64=:image_base64, notes=:notes
+            UPDATE {lang} SET headword=:headword, pronunciation=:pronunciation, morphology=:morphology, definition=:definition, example=:example, image_url=:image_url, image_base64=:image_base64, notes=:notes
             WHERE id=:id''',
                                   tango)
         self._db.commit()
