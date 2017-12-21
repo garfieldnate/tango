@@ -21,6 +21,9 @@ fh.setLevel(logging.DEBUG)
 logger.addHandler(fh)
 logger.setLevel(logging.DEBUG)
 
+# languages where we show a pronunciation field
+PRON_LANGS = ['JP', 'ZH', 'KO']
+
 
 def debug_print(message):
     """Print message to log file (colocated with dictionary files) and flush immediately"""

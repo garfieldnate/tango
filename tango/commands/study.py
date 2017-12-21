@@ -8,7 +8,7 @@ from asciimatics.widgets import Frame, Layout, Text, Button, TextBox
 
 from ..model import get_model, Score
 from ..sm2_plus import update_sm2p, prioritize_study
-from ..utils import debug_print, ascii_ctrl_diff
+from ..utils import debug_print, ascii_ctrl_diff, PRON_LANGS
 
 performance_ratings = {
     Score.BAD: 0.0,
@@ -18,8 +18,9 @@ performance_ratings = {
 
 
 class ViewState():
-    def __init__(self, entries):
+    def __init__(self, entries, lang):
         self.entries = entries
+        self.lang = lang
         self.tango_index = 0
 
     def current_tango(self):
@@ -129,11 +130,15 @@ class BackView(Frame):
         # Create the form for displaying the list of contacts.
         layout = Layout([100], fill_frame=True)
         self.add_layout(layout)
-        for keyword in ['headword', 'morphology', 'definition', 'example', 'notes']:
+        for keyword in ['headword', 'pronunciation', 'morphology', 'definition', 'example', 'notes']:
             if keyword == 'headword':
                 # TODO: uneditable Text widget
                 widget = Text(keyword.title(), keyword)
                 layout.add_widget(widget)
+            elif keyword == 'pronunciation':
+                if view_state.lang.upper() in PRON_LANGS:
+                    widget = Text(keyword.title(), keyword)
+                    layout.add_widget(widget)
             else:
                 # TODO: uneditable TextBox widget
                 widget = TextBox(3, keyword.title(), keyword, as_string=True)
@@ -214,7 +219,7 @@ def tui(lang):
     entries = prioritize_study(get_model().get_tango_for_language(lang))
 
     # index- the index of the tango currently shown
-    view_state = ViewState(entries)
+    view_state = ViewState(entries, lang)
 
     def show_cards(screen, start_scene):
         scenes = [

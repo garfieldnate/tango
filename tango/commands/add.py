@@ -10,7 +10,7 @@ from asciimatics.widgets import Frame, Layout, Text, \
 
 from .. import utils
 from ..model import get_model
-from ..utils import debug_print
+from ..utils import debug_print, PRON_LANGS
 
 
 class TangoModel(object):
@@ -34,8 +34,10 @@ class TangoModel(object):
     def get_current_contact(self):
         if self.current_id is None:
             headword = self.default_headword if self.default_headword else ""
-            return {"headword": headword, "morphology": "", "definition": "", "example": "", "notes": "",
+            data = {"headword": headword, "morphology": "", "definition": "", "example": "", "notes": "",
                     "image_url": "", "image_base64": ""}
+            if self.language in PRON_LANGS:
+                data['pronunciation'] = ""
         else:
             return self._model.get_tango(self.language, self.current_id)
 
@@ -76,8 +78,13 @@ class TangoView(Frame):
 
         headword_widget = Text("Headword", "headword")
         headword_widget._on_focus = note_focus("headword")
-        self.headword_widget = headword_widget
         layout.add_widget(headword_widget)
+
+        if self._model.language.upper() in PRON_LANGS:
+            pronunciation_widget = Text("Pronunciation", "pronunciation")
+            pronunciation_widget._on_focus = note_focus("pronunciation")
+            layout.add_widget(pronunciation_widget)
+
         for keyword in ['morphology', 'definition', 'example', 'image_url', 'notes']:
             widget = TextBox(3, keyword.title(), keyword, as_string=True)
             widget._on_focus = note_focus(keyword)
