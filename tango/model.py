@@ -134,7 +134,7 @@ class Model:
         if lang not in self._all_languages:
             raise ValueError("No such language: " + lang)
 
-        debug_print(tango)
+        debug_print(f"Inserting {tango}")
         cursor = self._db.cursor()
         cursor.execute(f'''
             INSERT INTO {lang} (created, headword, pronunciation, morphology, definition, example, image_url, image_base64, notes)

@@ -47,6 +47,8 @@ def get_url_as_base64text(url):
 # TODO: make language-agnostic
 IMAGE_SEARCH_URL = Template(
     "https://www.bing.de/images/search?&cc=$lang%2c$lang&setmkt=$lang-$lang&setlang=$lang-$lang&q=$word")
+# alternative: google image basic with captions
+# http://images.google.com/search?q=vorschlagen&safe=active&sout=1&tbm=isch&oq=...
 
 
 def get_image_search_url(lang, word):
@@ -88,7 +90,6 @@ def get_formatted_datetime(timestamp):
 
 
 def get_datetime_from_string(timestamp_string):
-    debug_print(timestamp_string)
     return parser.parse(timestamp_string)
 
 
@@ -98,3 +99,8 @@ def save_tango(lang, tango):
     output_file = app_data_path / (lang + '.txt')
     with open(output_file, 'a') as f:
         print(json.dumps(tango), file=f)
+
+class ExternalCallException(Exception):
+    def __init__(self, last_scene, command):
+        self.last_scene = last_scene
+        self.command = command

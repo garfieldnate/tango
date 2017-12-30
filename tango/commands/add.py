@@ -1,3 +1,4 @@
+from subprocess import Popen, PIPE
 import sys
 import webbrowser
 
@@ -10,7 +11,7 @@ from asciimatics.widgets import Frame, Layout, Text, \
 
 from .. import utils
 from ..model import get_model
-from ..utils import debug_print, PRON_LANGS
+from ..utils import debug_print, PRON_LANGS, ExternalCallException
 
 
 class TangoModel(object):
@@ -135,7 +136,8 @@ class TangoView(Frame):
             # ctrl-f opens a browser in some kind of search
             elif c == 6 and self.data['headword'].strip():
                 if self._model.current_focus == 'definition':
-                    webbrowser.open(utils.get_dictionary_url(self._model.language, self.data['headword']))
+                    raise ExternalCallException(self._scene, f'leo {self.data["headword"].strip()}')
+                    # webbrowser.open(utils.get_dictionary_url(self._model.language, self.data['headword']))
                 if self._model.current_focus == 'example':
                     webbrowser.open(utils.get_wiktionary_url(self._model.language, self.data["headword"]), new=2)
                 elif self._model.current_focus == 'image_url':
@@ -163,3 +165,11 @@ def tui(language, headword):
             sys.exit(0)
         except ResizeScreenError as e:
             last_scene = e.scene
+        except ExternalCallException as e:
+            last_scene = e.last_scene
+            try:
+                process = Popen(e.command + " | less -K -R", shell=True)
+                process.wait()
+            except KeyboardInterrupt:
+                # let less handle this, -K will exit cleanly
+                pass
