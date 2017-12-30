@@ -55,7 +55,7 @@ class FrontView(Frame):
         self.add_layout(layout)
 
         # TODO: uneditable Text widget
-        widget = Text("Headword", "headword")
+        widget = Text("Definition", "definition")
         layout.add_widget(widget)
 
         layout2 = Layout([1, 1, 1, 1])
@@ -84,7 +84,6 @@ class FrontView(Frame):
         raise NextScene("FrontView")
 
     def _flip(self):
-        debug_print("Flipping to back")
         raise NextScene("BackView")
 
     def process_event(self, event):
