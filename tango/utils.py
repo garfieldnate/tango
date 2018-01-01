@@ -45,29 +45,38 @@ def get_url_as_base64text(url):
 
 
 # TODO: make language-agnostic
-IMAGE_SEARCH_URL = Template(
-    "https://www.bing.de/images/search?&cc=$lang%2c$lang&setmkt=$lang-$lang&setlang=$lang-$lang&q=$word")
+
+BING_IMAGE_URL = Template(
+    "https://www.bing.$lang/images/search?&cc=$lang%2c$lang&setmkt=$lang-$lang&setlang=$lang-$lang&q=$word")
+
+GOOGLE_BASIC_IMAGE_URL = Template("http://images.google.$lang/search?q=$word&tbm=isch&sout=1")
+
+IMAGE_SEARCH_URLS = [BING_IMAGE_URL, GOOGLE_BASIC_IMAGE_URL]
 # alternative: google image basic with captions
 # http://images.google.com/search?q=vorschlagen&safe=active&sout=1&tbm=isch&oq=...
 
 
 def get_image_search_url(lang, word):
-    return IMAGE_SEARCH_URL.substitute(lang=lang, word=url_quote(word))
+    return [url.substitute(lang=lang, word=url_quote(f'"{word}"')) for url in IMAGE_SEARCH_URLS]
 
 
 WIKTIONARY_URL = Template("https://$lang.wiktionary.org/wiki/$word")
-
 
 def get_wiktionary_url(lang, word):
     return WIKTIONARY_URL.substitute(lang=lang, word=url_quote(word))
 
 
 TATOEBA_LANGS = {'de': 'deu', 'fr': 'fra', 'vi': 'vie', 'en': 'eng', 'zh': 'cmn', 'jp': 'jpn'}
-EXAMPLE_SEARCH_URL = Template("https://tatoeba.org/eng/sentences/search?from=$lang&to=und&query=$word")
+TATOEBA_URL = Template("https://tatoeba.org/eng/sentences/search?from=$lang&to=und&query=$word")
 
 
 def get_tatoeba_url(lang, word):
-    return EXAMPLE_SEARCH_URL.substitute(lang=TATOEBA_LANGS[lang], word=url_quote(word))
+    return TATOEBA_URL.substitute(lang=TATOEBA_LANGS[lang], word=url_quote(word))
+
+EXAMPLE_URLS = [WIKTIONARY_URL, TATOEBA_URL]
+
+def get_example_urls(lang, word):
+    return [get_wiktionary_url(lang, word)]
 
 LEO_LANGS = {'de': "deutsch"}
 LEO_URL = Template("https://dict.leo.org/englisch-$lang/$word")

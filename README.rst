@@ -22,5 +22,5 @@ To run the cli script in the working directory:
 Installing
 ----------
 
-    pip3 install .
+    pip3 install --upgrade .
 

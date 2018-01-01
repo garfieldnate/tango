@@ -11,7 +11,7 @@ from asciimatics.widgets import Frame, Layout, Text, \
 
 from .. import utils
 from ..model import get_model
-from ..utils import debug_print, PRON_LANGS, ExternalCallException, get_dictionary_command
+from ..utils import debug_print, PRON_LANGS, ExternalCallException
 
 
 class TangoModel(object):
@@ -136,12 +136,14 @@ class TangoView(Frame):
             # ctrl-f opens a browser in some kind of search
             elif c == 6 and self.data['headword'].strip():
                 if self._model.current_focus == 'definition':
-                    raise ExternalCallException(self._scene, get_dictionary_command(self._model.language, self.data["headword"].strip()))
+                    raise ExternalCallException(self._scene, utils.get_dictionary_command(self._model.language, self.data["headword"].strip()))
                     # webbrowser.open(utils.get_dictionary_url(self._model.language, self.data['headword']))
                 if self._model.current_focus == 'example':
-                    webbrowser.open(utils.get_wiktionary_url(self._model.language, self.data["headword"]), new=2)
+                    for url in utils.get_example_urls(self._model.language, self.data["headword"]):
+                        webbrowser.open(url, new=2)
                 elif self._model.current_focus == 'image_url':
-                    webbrowser.open(utils.get_image_search_url(self._model.language, self.data["headword"]), new=2)
+                    for url in utils.get_image_search_url(self._model.language, self.data["headword"]):
+                        webbrowser.open(url, new=2)
                     # TODO: pressing down arrow should go to next widget if cursor is at end of line
 
         # Now pass on to lower levels for normal handling of the event.
