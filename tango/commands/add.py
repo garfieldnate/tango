@@ -11,7 +11,7 @@ from asciimatics.widgets import Frame, Layout, Text, \
 
 from .. import utils
 from ..model import get_model
-from ..utils import debug_print, PRON_LANGS, ExternalCallException
+from ..utils import debug_print, PRON_LANGS, ExternalCallException, get_dictionary_command
 
 
 class TangoModel(object):
@@ -136,7 +136,7 @@ class TangoView(Frame):
             # ctrl-f opens a browser in some kind of search
             elif c == 6 and self.data['headword'].strip():
                 if self._model.current_focus == 'definition':
-                    raise ExternalCallException(self._scene, f'leo {self.data["headword"].strip()}')
+                    raise ExternalCallException(self._scene, get_dictionary_command(self._model.language, self.data["headword"].strip()))
                     # webbrowser.open(utils.get_dictionary_url(self._model.language, self.data['headword']))
                 if self._model.current_focus == 'example':
                     webbrowser.open(utils.get_wiktionary_url(self._model.language, self.data["headword"]), new=2)

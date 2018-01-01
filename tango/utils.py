@@ -69,14 +69,27 @@ EXAMPLE_SEARCH_URL = Template("https://tatoeba.org/eng/sentences/search?from=$la
 def get_tatoeba_url(lang, word):
     return EXAMPLE_SEARCH_URL.substitute(lang=TATOEBA_LANGS[lang], word=url_quote(word))
 
-
 LEO_LANGS = {'de': "deutsch"}
 LEO_URL = Template("https://dict.leo.org/englisch-$lang/$word")
-
 
 def get_dictionary_url(lang, word):
     return LEO_URL.substitute(lang=LEO_LANGS[lang], word=url_quote(word))
 
+def get_dictionary_command(lang, word):
+    if lang == 'de':
+        return f'leo "{word}"'
+    elif lang == 'fr':
+        return f'leo -l fr "{word}"'
+    elif lang == 'jp':
+        return f'myougiden -c --human "{word}"'
+    elif lang == 'ko':
+        return f'mac_dic_lookup "뉴에이스 영한사전 / 뉴에이스 한영사전" "{word}" html | format_dic_entries.py ko'
+    elif lang == 'zh':
+        return f'mac_dic_lookup "牛津英汉汉英词典" "{word}" html | format_dic_entries.py zh'
+    elif lang == 'en':
+        return f'mac_dic_lookup "Oxford American Writer\'s Thesaurus" "{word}" html | format_dic_entries.py en'
+    else:
+        return "echo sorry, there's no dictionary command available for this language"
 
 def get_current_datetime():
     return datetime.datetime.now(datetime.timezone.utc)
