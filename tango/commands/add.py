@@ -13,7 +13,6 @@ from .. import utils
 from ..model import get_model
 from ..utils import debug_print, PRON_LANGS, ExternalCallException
 
-
 class TangoModel(object):
     def __init__(self, language, headword):
         self.language = language
@@ -103,6 +102,7 @@ class TangoView(Frame):
     def _save_and_quit(self):
         self.save()
         self._model.update_current_contact(self.data)
+        self._model.save_quit = True
         raise StopApplication("User exited application")
 
     def _save_and_next(self):
@@ -112,8 +112,8 @@ class TangoView(Frame):
         self._model.clear()
         self.reset()
 
-    @staticmethod
-    def _quit():
+    def _quit(self):
+        self._model.save_quit = False
         raise StopApplication("User exited application")
 
     @staticmethod
@@ -135,7 +135,8 @@ class TangoView(Frame):
                 self._quit()
             # ctrl-f opens a browser in some kind of search
             elif c == 6 and self.data['headword'].strip():
-                if self._model.current_focus == 'definition':
+                if self._model.current_focus in ['definition', 'headword', 'pronunciation', 'morphology']:
+                    self.save()
                     raise ExternalCallException(self._scene, utils.get_dictionary_command(self._model.language, self.data["headword"].strip()))
                     # webbrowser.open(utils.get_dictionary_url(self._model.language, self.data['headword']))
                 if self._model.current_focus == 'example':
@@ -164,6 +165,10 @@ def tui(language, headword):
     while True:
         try:
             Screen.wrapper(player, catch_interrupt=True, arguments=[last_scene, tango_model, {"headword": headword}])
+            if tango_model.save_quit:
+                print("Saved word and quit")
+            else:
+                print("Quit without saving word")
             sys.exit(0)
         except ResizeScreenError as e:
             last_scene = e.scene
