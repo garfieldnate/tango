@@ -17,7 +17,7 @@ Developing
 
 To run the cli script in the working directory:
 
-    p3 -m tango.cli
+    python3 -m tango.cli
 
 Installing
 ----------

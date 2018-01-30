@@ -1,3 +1,4 @@
+from subprocess import Popen, PIPE
 import sys
 
 from asciimatics.event import KeyboardEvent
@@ -8,7 +9,7 @@ from asciimatics.widgets import Frame, Layout, Text, Button, TextBox
 
 from ..model import get_model, Score
 from ..sm2_plus import update_sm2p, prioritize_study
-from ..utils import debug_print, ascii_ctrl_diff, PRON_LANGS
+from ..utils import debug_print, ascii_ctrl_diff, PRON_LANGS, ImgCatException
 
 performance_ratings = {
     Score.BAD: 0.0,
@@ -61,8 +62,10 @@ class FrontView(Frame):
         layout2 = Layout([1, 1, 1, 1])
         self.add_layout(layout2)
         layout2.add_widget(Button("Back [b]", self._back), 0)
-        layout2.add_widget(Button("Next [n]", self._next), 1)
+        layout2.add_widget(Button("Next [n]", self._next), 0)
         layout2.add_widget(Button("Flip [f]", self._flip), 2)
+        if(self.data["image_base64"]):
+            layout2.add_widget(Button("Pic [p]", self._pic), 2)
         layout2.add_widget(Button("Exit [q]", self._exit), 3)
         self.fix()
 
@@ -86,6 +89,9 @@ class FrontView(Frame):
     def _flip(self):
         raise NextScene("BackView")
 
+    def _pic(self):
+        raise ImgCatException(self._scene, self.data)
+
     def process_event(self, event):
         if isinstance(event, KeyboardEvent):
             c = event.key_code
@@ -98,6 +104,9 @@ class FrontView(Frame):
             # n for next
             elif c in (14, 14 + ascii_ctrl_diff):
                 self._next()
+            # p for picture
+            elif c in (16, 16 + ascii_ctrl_diff):
+                self._pic()
             # q for next
             elif c in (17, 17 + ascii_ctrl_diff):
                 self._exit()
@@ -150,6 +159,8 @@ class BackView(Frame):
 
         layout2.add_widget(Button("Back [b]", self._back), 0)
         layout2.add_widget(Button("Flip [f]", self._flip), 0)
+        if(self.data["image_base64"]):
+            layout2.add_widget(Button("Pic [p]", self._pic), 0)
         layout2.add_widget(Button("Exit [q]", self._exit), 1)
 
         self.fix()
@@ -173,6 +184,9 @@ class BackView(Frame):
 
     def _flip(self):
         raise NextScene("FrontView")
+
+    def _pic(self):
+        raise ExternalCallException(self._scene, get_imgcat_command(self.data), should_page=False)
 
     def _score_function(self, score):
         def record_in_model():
@@ -198,6 +212,9 @@ class BackView(Frame):
             # f for flip
             elif c in (6, 6 + ascii_ctrl_diff):
                 self._flip()
+            # p for picture
+            elif c in (16, 16 + ascii_ctrl_diff):
+                self._pic()
             # Stop on q
             elif c in (17, 17 + ascii_ctrl_diff):
                 self._exit()
@@ -234,3 +251,10 @@ def tui(lang):
             sys.exit(0)
         except ResizeScreenError as e:
             current_scene = e.scene
+        except ImgCatException as e:
+            last_scene = e.last_scene
+            try:
+                e.print()
+            except KeyboardInterrupt:
+                # let less handle this, -K will exit cleanly
+                pass

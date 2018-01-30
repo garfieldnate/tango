@@ -85,6 +85,7 @@ def get_dictionary_url(lang, word):
     return LEO_URL.substitute(lang=LEO_LANGS[lang], word=url_quote(word))
 
 def get_dictionary_command(lang, word):
+    # TODO: seriously needs to be in a config file
     if lang == 'de':
         return f'leo "{word}"'
     elif lang == 'fr':
@@ -99,6 +100,8 @@ def get_dictionary_command(lang, word):
         return f'mac_dic_lookup "Oxford American Writer\'s Thesaurus" "{word}" html | format_dic_entries.py en'
     else:
         return "echo sorry, there's no dictionary command available for this language"
+
+
 
 def get_current_datetime():
     return datetime.datetime.now(datetime.timezone.utc)
@@ -123,6 +126,21 @@ def save_tango(lang, tango):
         print(json.dumps(tango), file=f)
 
 class ExternalCallException(Exception):
-    def __init__(self, last_scene, command):
+    def __init__(self, last_scene, command, should_page=True):
         self.last_scene = last_scene
         self.command = command
+        if should_page:
+            self.command += " | less -KR"
+        else:
+            self.command += '; read -n1 -r -p "Press any key to continue..."'
+
+class ImgCatException(Exception):
+    def __init__(self, last_scene, tango):
+        self.last_scene = last_scene
+        if not tango['image_base64']:
+            raise ValueError("No image exists for tango: " + tango.get('headword', 'UNKNOWN'))
+        self.tango = tango
+
+    def print(self):
+        print(f"\033]1337;File=size={len(self.tango['image_base64'])};inline=1:{self.tango['image_base64']}\a")
+        input("Press Enter to continue...")

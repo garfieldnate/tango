@@ -175,7 +175,7 @@ def tui(language, headword):
         except ExternalCallException as e:
             last_scene = e.last_scene
             try:
-                process = Popen(e.command + " | less -K -R", shell=True)
+                process = Popen(e.command, shell=True)
                 process.wait()
             except KeyboardInterrupt:
                 # let less handle this, -K will exit cleanly
