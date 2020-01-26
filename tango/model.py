@@ -11,7 +11,7 @@ db_path = app_data_path / "tango.db"
 reserved_tables = ["review_history", "sm2_plus"]
 
 lang_fields = ["created", "headword", "pronunciation", "morphology", "definition", "example", "image_url",
-               "image_base64", "notes"]
+               "image_base64", "notes", "source"]
 
 
 class Score(Enum):
@@ -137,8 +137,8 @@ class Model:
         debug_print(f"Inserting {tango}")
         cursor = self._db.cursor()
         cursor.execute(f'''
-            INSERT INTO {lang} (created, headword, pronunciation, morphology, definition, example, image_url, image_base64, notes)
-            VALUES('{get_formatted_datetime(get_current_datetime())}', :headword, :pronunciation, :morphology, :definition, :example, :image_url, :image_base64, :notes)''',
+            INSERT INTO {lang} (created, headword, pronunciation, morphology, definition, example, image_url, image_base64, notes, source)
+            VALUES('{get_formatted_datetime(get_current_datetime())}', :headword, :pronunciation, :morphology, :definition, :example, :image_url, :image_base64, :notes, :source)''',
                        tango)
         self._db.commit()
         return cursor.lastrowid
@@ -147,7 +147,7 @@ class Model:
         if lang not in self._all_languages:
             raise ValueError("No such language: " + lang)
         self._db.cursor().execute(f'''
-            UPDATE {lang} SET headword=:headword, pronunciation=:pronunciation, morphology=:morphology, definition=:definition, example=:example, image_url=:image_url, image_base64=:image_base64, notes=:notes
+            UPDATE {lang} SET headword=:headword, pronunciation=:pronunciation, morphology=:morphology, definition=:definition, example=:example, image_url=:image_url, image_base64=:image_base64, notes=:notes, source=:source
             WHERE id=:id''',
                                   tango)
         self._db.commit()

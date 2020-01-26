@@ -138,7 +138,7 @@ class BackView(Frame):
         # Create the form for displaying the list of contacts.
         layout = Layout([100], fill_frame=True)
         self.add_layout(layout)
-        for keyword in ['headword', 'pronunciation', 'morphology', 'definition', 'example', 'notes']:
+        for keyword in ['headword', 'pronunciation', 'morphology', 'definition', 'example', 'notes', 'source']:
             if keyword == 'headword':
                 # TODO: uneditable Text widget
                 widget = Text(keyword.title(), keyword)

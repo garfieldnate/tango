@@ -35,7 +35,7 @@ class TangoModel(object):
             headword = self.default_headword if self.default_headword else ""
             pronunciation = headword if headword else ""
             return {"headword": headword, "pronunciation": pronunciation, "morphology": "", "definition": "", "example": "", "notes": "",
-                    "image_url": "", "image_base64": ""}
+                    "image_url": "", "image_base64": "", "source": ""}
         else:
             return self._model.get_tango(self.language, self.current_id)
 
@@ -83,7 +83,7 @@ class TangoView(Frame):
             pronunciation_widget._on_focus = note_focus("pronunciation")
             layout.add_widget(pronunciation_widget)
 
-        for keyword in ['morphology', 'definition', 'example', 'image_url', 'notes']:
+        for keyword in ['morphology', 'definition', 'example', 'image_url', 'notes', 'source']:
             widget = TextBox(3, keyword.title(), keyword, as_string=True)
             widget._on_focus = note_focus(keyword)
             layout.add_widget(widget)
@@ -135,7 +135,7 @@ class TangoView(Frame):
                 self._quit()
             # ctrl-f opens a browser in some kind of search
             elif c == 6 and self.data['headword'].strip():
-                if self._model.current_focus in ['definition', 'headword', 'pronunciation', 'morphology']:
+                if self._model.current_focus in ['definition', 'headword', 'pronunciation', 'morphology', 'source']:
                     self.save()
                     raise ExternalCallException(self._scene, utils.get_dictionary_command(self._model.language, self.data["headword"].strip()))
                     # webbrowser.open(utils.get_dictionary_url(self._model.language, self.data['headword']))
